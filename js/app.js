@@ -173,7 +173,10 @@ async function loadTrains() {
   tableBody.innerHTML = `<tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div> ${t('loading')}</div></td></tr>`;
 
   const now = new Date();
-  const dateStr = encodeURIComponent(now.toString());
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const pad = n => String(n).padStart(2, '0');
+  const dateStr = `${days[now.getDay()]} ${months[now.getMonth()]} ${pad(now.getDate())} ${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} GMT+0200`;
   const action = currentTab === 'departures' ? 'departures' : 'arrivals';
 
   if (currentTab === 'departures') {
@@ -199,7 +202,7 @@ async function loadTrains() {
   }
 
   try {
-    const res = await fetch(`${API}?action=${action}&code=${currentStation.code}&date=${dateStr}`);
+    const res = await fetch(`${API}?action=${action}&code=${currentStation.code}&date=${encodeURIComponent(dateStr)}`);
     const data = await res.json();
 
     if (!Array.isArray(data) || !data.length) {
@@ -426,15 +429,18 @@ async function loadWeather(stationCode) {
       `;
     } else {
       const icon = getWeatherEmoji(data.descIcona || data.descrizione || '');
+      const tempDetails = [];
+      if (data.tempMattino != null) tempDetails.push(`&#127749; ${data.tempMattino}°`);
+      if (data.tempPomeriggio != null) tempDetails.push(`&#9728;&#65039; ${data.tempPomeriggio}°`);
+      if (data.tempSera != null) tempDetails.push(`&#127747; ${data.tempSera}°`);
       container.innerHTML = `
         <div class="weather-widget">
           <div class="weather-icon">${icon}</div>
           <div class="weather-info">
-            <div class="weather-temp">${data.temperatura ? data.temperatura + '°C' : '--'}</div>
+            <div class="weather-temp">${data.temperatura != null ? data.temperatura + '°C' : '--'}</div>
             <div class="weather-desc">${escapeHtml(data.descrizione || data.descIcona || '')}</div>
             <div class="weather-details">
-              ${data.umidita ? `<span>&#128167; ${data.umidita}%</span>` : ''}
-              ${data.velocitaVento ? `<span>&#127788;&#65039; ${data.velocitaVento} km/h</span>` : ''}
+              ${tempDetails.length ? tempDetails.join(' &nbsp; ') : ''}
             </div>
           </div>
         </div>

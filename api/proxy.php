@@ -28,7 +28,7 @@ function trenitalia(string $path): string|false {
         'http' => [
             'timeout'       => 10,
             'ignore_errors' => true,
-            'header'        => "Accept: application/json\r\n",
+            'header'        => "Accept: */*\r\n",
         ],
     ]);
     return @file_get_contents($url, false, $ctx);
@@ -50,6 +50,19 @@ function parseStationLines(string $raw): array {
     return $stations;
 }
 
+function getWeatherDescription(int $code): string {
+    $map = [
+        0 => 'Sereno', 1 => 'Sereno', 2 => 'Poco nuvoloso',
+        3 => 'Nuvoloso', 4 => 'Molto nuvoloso', 5 => 'Coperto',
+        10 => 'Nebbia', 11 => 'Pioggia leggera', 12 => 'Pioggia',
+        13 => 'Pioggia forte', 14 => 'Temporale', 15 => 'Neve',
+        100 => 'Sereno', 101 => 'Poco nuvoloso', 102 => 'Nuvoloso',
+        103 => 'Coperto', 104 => 'Pioggia', 105 => 'Temporale',
+        106 => 'Neve',
+    ];
+    return $map[$code] ?? 'Variabile';
+}
+
 switch ($action) {
 
     case 'autocomplete':
@@ -68,9 +81,9 @@ switch ($action) {
 
     case 'departures':
         $code = preg_replace('/[^A-Za-z0-9]/', '', $_GET['code'] ?? '');
-        $ts   = $_GET['ts'] ?? (string)(time() * 1000);
-        $date = $_GET['date'] ?? date('D M d Y H:i:s') . ' GMT+0100';
-        $raw  = trenitalia("partenze/{$code}/{$date}");
+        $date = $_GET['date'] ?? date('D M d Y H:i:s') . ' GMT+0200';
+        $encodedDate = rawurlencode($date);
+        $raw  = trenitalia("partenze/{$code}/{$encodedDate}");
         if ($raw === false) {
             echo json_encode([]);
             exit;
@@ -80,8 +93,9 @@ switch ($action) {
 
     case 'arrivals':
         $code = preg_replace('/[^A-Za-z0-9]/', '', $_GET['code'] ?? '');
-        $date = $_GET['date'] ?? date('D M d Y H:i:s') . ' GMT+0100';
-        $raw  = trenitalia("arrivi/{$code}/{$date}");
+        $date = $_GET['date'] ?? date('D M d Y H:i:s') . ' GMT+0200';
+        $encodedDate = rawurlencode($date);
+        $raw  = trenitalia("arrivi/{$code}/{$encodedDate}");
         if ($raw === false) {
             echo json_encode([]);
             exit;
@@ -144,10 +158,44 @@ switch ($action) {
             echo json_encode(['error' => 'Missing station code']);
             exit;
         }
-        $raw = trenitalia("datimeteo/{$code}");
-        if ($raw !== false && $raw !== '') {
-            echo $raw;
-        } elseif (OWM_API_KEY !== '') {
+        $region = '0';
+        if (preg_match('/^S(\d{2})/', $code, $m)) {
+            $region = ltrim($m[1], '0') ?: '0';
+        }
+        $raw = trenitalia("datimeteo/{$region}");
+        $weatherFound = false;
+        if ($raw !== false && $raw !== '' && $raw !== 'Error') {
+            $allWeather = json_decode($raw, true);
+            if (is_array($allWeather) && isset($allWeather[$code])) {
+                $w = $allWeather[$code];
+                echo json_encode([
+                    'source'      => 'trenitalia',
+                    'temperatura' => $w['oggiTemperatura'] ?? null,
+                    'descrizione' => getWeatherDescription($w['oggiTempo'] ?? 0),
+                    'descIcona'   => getWeatherDescription($w['oggiTempo'] ?? 0),
+                    'umidita'     => null,
+                    'velocitaVento' => null,
+                    'tempMattino' => $w['oggiTemperaturaMattino'] ?? null,
+                    'tempPomeriggio' => $w['oggiTemperaturaPomeriggio'] ?? null,
+                    'tempSera'    => $w['oggiTemperaturaSera'] ?? null,
+                ]);
+                $weatherFound = true;
+            } elseif (is_array($allWeather)) {
+                $first = reset($allWeather);
+                if ($first) {
+                    echo json_encode([
+                        'source'      => 'trenitalia',
+                        'temperatura' => $first['oggiTemperatura'] ?? null,
+                        'descrizione' => getWeatherDescription($first['oggiTempo'] ?? 0),
+                        'descIcona'   => getWeatherDescription($first['oggiTempo'] ?? 0),
+                        'umidita'     => null,
+                        'velocitaVento' => null,
+                    ]);
+                    $weatherFound = true;
+                }
+            }
+        }
+        if (!$weatherFound && OWM_API_KEY !== '') {
             $lat = floatval($_GET['lat'] ?? 0);
             $lon = floatval($_GET['lon'] ?? 0);
             if ($lat && $lon) {
@@ -170,7 +218,7 @@ switch ($action) {
                 }
             }
             echo json_encode(['error' => 'Weather unavailable']);
-        } else {
+        } elseif (!$weatherFound) {
             echo json_encode(['error' => 'Weather unavailable']);
         }
         break;
