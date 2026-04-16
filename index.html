@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BinarioLive — Monitoraggio Treni in Tempo Reale</title>
+  <meta name="description" content="Monitora i treni italiani in tempo reale: partenze, arrivi, ritardi e percorsi.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚆</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ==================== Header ==================== -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">&#128646;</div>
+        <span data-i18n="appName">BinarioLive</span>
+      </div>
+      <div class="header-controls">
+        <div class="live-badge" title="Treni circolanti">
+          <span style="color:var(--success);font-weight:700;font-size:0.85rem;">&#9679;</span>
+          <span id="liveCounter" style="font-weight:700;font-size:0.9rem;">--</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);" data-i18n="liveTrains">Treni circolanti</span>
+        </div>
+        <div class="lang-toggle">
+          <button class="lang-btn active" data-lang="it">IT</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+        <div class="theme-toggle" id="themeToggle" title="Cambia tema">
+          <span class="icon-sun">&#9728;&#65039;</span>
+          <span class="icon-moon">&#127769;</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== Main Content ==================== -->
+  <main class="main">
+
+    <!-- Search -->
+    <section class="search-section">
+      <div class="search-box">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" class="search-input" id="stationSearch" data-i18n="searchStation" placeholder="Cerca stazione..." autocomplete="off">
+        <div class="autocomplete-list" id="stationList"></div>
+      </div>
+      <div class="search-box">
+        <span class="search-icon">&#128646;</span>
+        <input type="text" class="search-input" id="trainSearch" data-i18n="searchTrain" placeholder="Cerca numero treno..." autocomplete="off">
+        <div class="autocomplete-list" id="trainList"></div>
+      </div>
+    </section>
+
+    <!-- Recent Stations -->
+    <div id="recentStations" class="recent-stations"></div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+
+      <!-- Train Table -->
+      <div>
+        <!-- Tabs -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem;">
+          <div class="tabs-bar">
+            <button class="tab-btn active" data-tab="departures" data-i18n="departures">Partenze</button>
+            <button class="tab-btn" data-tab="arrivals" data-i18n="arrivals">Arrivi</button>
+          </div>
+          <button class="tab-btn" onclick="if(currentStation){showStationOnMap(currentStation.name, 41.9, 12.5)}" title="Mappa stazione">
+            &#128506; <span data-i18n="map">Mappa</span>
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-body no-pad">
+            <div class="train-table-wrapper">
+              <table class="train-table">
+                <thead>
+                  <tr id="trainTableHead">
+                    <th data-i18n="train">Treno</th>
+                    <th data-i18n="destination">Destinazione</th>
+                    <th data-i18n="scheduled">Previsto</th>
+                    <th class="col-hide-mobile" data-i18n="actual">Effettivo</th>
+                    <th data-i18n="delay">Ritardo</th>
+                    <th data-i18n="platform">Binario</th>
+                    <th class="col-hide-mobile" data-i18n="status">Stato</th>
+                  </tr>
+                </thead>
+                <tbody id="trainTableBody">
+                  <tr>
+                    <td colspan="7">
+                      <div class="empty-state">
+                        <div class="empty-state-icon">&#128643;</div>
+                        <div class="empty-state-text" data-i18n="searchByStation">Cerca per stazione</div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar-widgets">
+
+        <!-- Stats Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">&#128200; <span data-i18n="stats">Statistiche</span></div>
+          </div>
+          <div class="card-body">
+            <div class="stats-bar">
+              <div class="stat-card">
+                <div class="stat-value" id="statTotal">0</div>
+                <div class="stat-label">Totale</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value on-time" id="statOnTime">0</div>
+                <div class="stat-label" data-i18n="onTime">In orario</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value delayed" id="statDelayed">0</div>
+                <div class="stat-label" data-i18n="delayed">In ritardo</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value cancelled" id="statCancelled">0</div>
+                <div class="stat-label" data-i18n="cancelled">Soppresso</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weather Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">&#127780;&#65039; <span data-i18n="weather">Meteo</span></div>
+          </div>
+          <div class="card-body" id="weatherWidget">
+            <div class="weather-widget">
+              <div class="weather-icon">&#127780;&#65039;</div>
+              <div class="weather-info">
+                <div class="weather-desc" data-i18n="searchByStation" style="color:var(--text-muted)">Cerca per stazione</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== Train Route Modal ==================== -->
+  <div class="modal-overlay" id="routeModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle" data-i18n="trainRoute">Percorso treno</div>
+        <button class="modal-close" onclick="closeModal()" title="Chiudi">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <div class="empty-state">
+          <div class="empty-state-icon">&#128646;</div>
+          <div class="empty-state-text" data-i18n="searchByTrain">Cerca per numero treno</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Map Panel ==================== -->
+  <div class="map-panel" id="mapPanel">
+    <div class="map-panel-header">
+      <div class="map-panel-title">&#128506; <span data-i18n="map">Mappa</span></div>
+      <button class="map-close-btn" onclick="hideMapPanel()">&times;</button>
+    </div>
+    <div id="mapContainer"></div>
+  </div>
+
+  <!-- ==================== Scripts ==================== -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
