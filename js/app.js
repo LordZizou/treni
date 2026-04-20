@@ -123,7 +123,9 @@ function renderAutocomplete(container, items, onSelect) {
   });
 }
 
-function selectStation(station) {
+// Seleziona una stazione: salva i dati, carica treni/meteo,
+// e recupera le coordinate GPS per la mappa
+async function selectStation(station) {
   currentStation = station;
   document.getElementById('stationSearch').value = station.name;
   document.getElementById('stationList').classList.remove('show');
@@ -132,6 +134,16 @@ function selectStation(station) {
   loadTrains();
   loadWeather(station.code);
   logSearch(station.code, station.name, currentTab === 'departures' ? 'departure' : 'arrival');
+
+  // Recupera le coordinate GPS della stazione per la mappa
+  try {
+    const res = await fetch(`${API}?action=stationDetail&code=${station.code}`);
+    const coords = await res.json();
+    if (coords.lat && coords.lng) {
+      currentStation.lat = coords.lat;
+      currentStation.lng = coords.lng;
+    }
+  } catch { /* la mappa funzionera' senza coordinate */ }
 }
 
 /* ==================== Train Search ==================== */
@@ -296,6 +308,9 @@ async function loadTrainRoute(trainNum, originCode, depDate) {
   }
 }
 
+// Renderizza il percorso del treno nella modale e prepara i dati per la mappa.
+// Raccoglie i codici stazione di tutte le fermate per poter recuperare
+// le coordinate GPS tramite l'endpoint stationDetail (batch).
 function renderTrainRoute(data, container) {
   const cat = data.categoria || '';
   const catDesc = data.categoriaDescrizione || data.categoria || '';
@@ -327,11 +342,12 @@ function renderTrainRoute(data, container) {
       <div class="route-info-item">${delayBadge}</div>
       ${lastUpdate ? `<div class="route-info-item"><span class="route-info-label">${t('lastUpdate')}:</span> ${escapeHtml(lastUpdate)}</div>` : ''}
     </div>
-    <button class="tab-btn" onclick="showRouteOnMap()" style="margin-bottom:1rem;">&#128506; ${t('showOnMap')}</button>
+    <button class="tab-btn" id="routeMapBtn" onclick="showRouteOnMap()" style="margin-bottom:1rem;" disabled>&#128506; ${t('showOnMap')} (${t('loading')})</button>
     <div class="route-timeline">
   `;
 
-  const mapStops = [];
+  // Dati delle fermate da passare poi alla mappa (verranno arricchiti con le coordinate)
+  const mapStopsData = [];
 
   stops.forEach((stop, i) => {
     const isFirst = i === 0;
@@ -362,36 +378,78 @@ function renderTrainRoute(data, container) {
       <div class="route-stop ${cls}" style="animation-delay: ${i * 0.05}s">
         <div class="route-stop-name">${escapeHtml(stop.stazione || '')}</div>
         <div class="route-stop-times">
-          ${!isFirst && arrScheduled ? `<span>${t('arrivalTime')}: ${arrScheduled}${arrActual ? ' → ' + arrActual : ''}</span>` : ''}
-          ${!isLast && depScheduled ? `<span>${t('departureTime')}: ${depScheduled}${depActual ? ' → ' + depActual : ''}</span>` : ''}
-          ${isFirst && depScheduled ? `<span>${t('departureTime')}: ${depScheduled}${depActual ? ' → ' + depActual : ''}</span>` : ''}
-          ${isLast && arrScheduled ? `<span>${t('arrivalTime')}: ${arrScheduled}${arrActual ? ' → ' + arrActual : ''}</span>` : ''}
+          ${!isFirst && arrScheduled ? `<span>${t('arrivalTime')}: ${arrScheduled}${arrActual ? ' \u2192 ' + arrActual : ''}</span>` : ''}
+          ${!isLast && depScheduled ? `<span>${t('departureTime')}: ${depScheduled}${depActual ? ' \u2192 ' + depActual : ''}</span>` : ''}
+          ${isFirst && depScheduled ? `<span>${t('departureTime')}: ${depScheduled}${depActual ? ' \u2192 ' + depActual : ''}</span>` : ''}
+          ${isLast && arrScheduled ? `<span>${t('arrivalTime')}: ${arrScheduled}${arrActual ? ' \u2192 ' + arrActual : ''}</span>` : ''}
           ${delayStr}
           ${binario ? `<span>&#128678; ${binario}</span>` : ''}
         </div>
       </div>
     `;
 
-    if (stop.lat && stop.lng) {
-      mapStops.push({
-        name: stop.stazione,
-        lat: stop.lat,
-        lng: stop.lng,
-        scheduledArrival: arrScheduled,
-        scheduledDeparture: depScheduled,
-        actualArrival: arrActual,
-        actualDeparture: depActual,
-        delay: stopDelay,
-      });
-    }
+    // Salva i dati della fermata (le coordinate verranno aggiunte dopo)
+    mapStopsData.push({
+      stationCode: stop.id || '',
+      name: stop.stazione,
+      scheduledArrival: arrScheduled,
+      scheduledDeparture: depScheduled,
+      actualArrival: arrActual,
+      actualDeparture: depActual,
+      delay: stopDelay,
+    });
   });
 
   html += '</div>';
   container.innerHTML = html;
 
-  window._currentRouteStops = mapStops;
+  // Salva i dati base e avvia il recupero delle coordinate in background
+  window._currentRouteStops = [];
+  fetchRouteCoordinates(mapStopsData);
 }
 
+// Recupera le coordinate GPS di tutte le fermate del percorso
+// tramite una chiamata batch al proxy, poi abilita il pulsante mappa.
+async function fetchRouteCoordinates(stopsData) {
+  const codes = stopsData.map(s => s.stationCode).filter(Boolean);
+  if (!codes.length) return;
+
+  try {
+    const res = await fetch(`${API}?action=stationDetail&codes=${codes.join(',')}`);
+    const coordsMap = await res.json();
+
+    // Arricchisce ogni fermata con le coordinate ricevute
+    const mapStops = [];
+    stopsData.forEach(stop => {
+      const coords = coordsMap[stop.stationCode];
+      if (coords && coords.lat && coords.lng) {
+        mapStops.push({
+          ...stop,
+          lat: coords.lat,
+          lng: coords.lng,
+        });
+      }
+    });
+
+    window._currentRouteStops = mapStops;
+
+    // Abilita il pulsante "Mostra sulla mappa"
+    const btn = document.getElementById('routeMapBtn');
+    if (btn) {
+      if (mapStops.length > 0) {
+        btn.disabled = false;
+        btn.innerHTML = `&#128506; ${t('showOnMap')}`;
+      } else {
+        btn.innerHTML = `&#128506; ${t('map')} (N/A)`;
+      }
+    }
+  } catch {
+    const btn = document.getElementById('routeMapBtn');
+    if (btn) btn.innerHTML = `&#128506; ${t('map')} (N/A)`;
+  }
+}
+
+// Mostra il percorso del treno sulla mappa Leaflet
 function showRouteOnMap() {
   if (window._currentRouteStops && window._currentRouteStops.length) {
     showTrainRouteOnMap(window._currentRouteStops);

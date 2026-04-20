@@ -70,7 +70,7 @@
             <button class="tab-btn active" data-tab="departures" data-i18n="departures">Partenze</button>
             <button class="tab-btn" data-tab="arrivals" data-i18n="arrivals">Arrivi</button>
           </div>
-          <button class="tab-btn" onclick="if(currentStation){showStationOnMap(currentStation.name, 41.9, 12.5)}" title="Mappa stazione">
+          <button class="tab-btn" onclick="if(currentStation &amp;&amp; currentStation.lat){showStationOnMap(currentStation.name, currentStation.lat, currentStation.lng)}" title="Mappa stazione">
             &#128506; <span data-i18n="map">Mappa</span>
           </button>
         </div>
