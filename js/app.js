@@ -182,7 +182,7 @@ async function loadTrains() {
   const tableBody = document.getElementById('trainTableBody');
   const tableHead = document.getElementById('trainTableHead');
 
-  tableBody.innerHTML = `<tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div> ${t('loading')}</div></td></tr>`;
+  tableBody.innerHTML = `<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div> ${t('loading')}</div></td></tr>`;
 
   const now = new Date();
   const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -197,9 +197,8 @@ async function loadTrains() {
       <th>${t('destination')}</th>
       <th>${t('scheduled')}</th>
       <th class="col-hide-mobile">${t('actual')}</th>
-      <th>${t('delay')}</th>
       <th>${t('platform')}</th>
-      <th class="col-hide-mobile">${t('status')}</th>
+      <th>${t('status')}</th>
     `;
   } else {
     tableHead.innerHTML = `
@@ -207,9 +206,8 @@ async function loadTrains() {
       <th>${t('origin')}</th>
       <th>${t('scheduled')}</th>
       <th class="col-hide-mobile">${t('actual')}</th>
-      <th>${t('delay')}</th>
       <th>${t('platform')}</th>
-      <th class="col-hide-mobile">${t('status')}</th>
+      <th>${t('status')}</th>
     `;
   }
 
@@ -218,7 +216,7 @@ async function loadTrains() {
     const data = await res.json();
 
     if (!Array.isArray(data) || !data.length) {
-      tableBody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">&#128646;</div><div class="empty-state-text">${t('noTrainsFound')}</div></div></td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">&#128646;</div><div class="empty-state-text">${t('noTrainsFound')}</div></div></td></tr>`;
       updateStatsFromTrains([]);
       return;
     }
@@ -235,7 +233,7 @@ async function loadTrains() {
 
     updateStatsFromTrains(data);
   } catch {
-    tableBody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-text">Errore nel caricamento</div></div></td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-text">Errore nel caricamento</div></div></td></tr>`;
   }
 }
 
@@ -264,21 +262,14 @@ function renderTrainRow(train) {
     statusHtml = `<span class="status-badge status-on-time">&#10003; ${t('onTime')}</span>`;
   }
 
-  const delayHtml = delay > 0
-    ? `<span class="delay-positive">+${delay}'</span>`
-    : delay < 0
-      ? `<span class="delay-negative">${delay}'</span>`
-      : `<span class="delay-zero">0'</span>`;
-
   return `
     <tr data-train="${trainNum}" data-origin="${escapeHtml(originCode)}" data-dep="${depDate}">
       <td><div class="train-number"><span class="train-category ${catClass}">${escapeHtml(category)}</span> ${trainNum}</div></td>
       <td>${escapeHtml(dest)}</td>
       <td>${scheduled}</td>
       <td class="col-hide-mobile">${actual || '-'}</td>
-      <td>${delayHtml}</td>
       <td>${escapeHtml(String(platform))}</td>
-      <td class="col-hide-mobile">${statusHtml}</td>
+      <td>${statusHtml}</td>
     </tr>
   `;
 }
