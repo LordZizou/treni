@@ -58,6 +58,7 @@ const I18N = {
     regularTrain: 'Treno regionale',
     showOnMap: 'Mostra sulla mappa',
     stops: 'fermate',
+    news: 'Notizie',
   },
   en: {
     appName: 'BinarioLive',
@@ -114,6 +115,7 @@ const I18N = {
     regularTrain: 'Regional train',
     showOnMap: 'Show on map',
     stops: 'stops',
+    news: 'News',
   }
 };
 

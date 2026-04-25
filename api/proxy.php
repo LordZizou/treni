@@ -226,6 +226,12 @@ switch ($action) {
         echo json_encode($query->fetchAll());
         break;
 
+    // Notizie in tempo reale da Trenitalia
+    case 'news':
+        $risposta = chiamaTrenitalia('news/0/it');
+        echo $risposta ?: json_encode([]);
+        break;
+
     // Salva la ricerca nel database (per tenere lo storico)
     case 'logSearch':
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['error' => 'Serve POST']); exit; }

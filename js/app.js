@@ -2,10 +2,11 @@
 // Gestisce la ricerca stazioni, il caricamento dei treni e il meteo
 
 const API = 'api/proxy.php';
-let stazioneCorrente = null;   // La stazione selezionata dall'utente
-let tabCorrente = 'departures'; // Tab attiva: partenze o arrivi
-let timerStazione = null;       // Timer per il debounce della ricerca stazione
-let timerTreno = null;          // Timer per il debounce della ricerca treno
+const SOGLIA_RITARDO = 10;     // Minuti: se un treno supera questa soglia, mostra notifica
+let stazioneCorrente = null;
+let tabCorrente = 'departures';
+let timerStazione = null;
+let timerTreno = null;
 
 // Avvio: quando la pagina è pronta, inizializza tema, lingua e eventi
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   mostraStazioniRecenti();
   updateAllTranslations();
   aggiornaCampo();
+  caricaNews();
   setInterval(aggiornaCampo, 60000); // aggiorna il contatore ogni minuto
 });
 
@@ -236,6 +238,14 @@ async function caricaTreni() {
     });
 
     aggiornaStat(treni);
+
+    // Notifica toast per i treni con ritardo sopra la soglia
+    treni.forEach(treno => {
+      const ritardo = treno.ritardo ?? 0;
+      if (ritardo >= SOGLIA_RITARDO) {
+        mostraNotifica(`${t('train')} ${treno.numeroTreno || ''} +${ritardo} ${t('minutes')} ${t('delayed').toLowerCase()}`);
+      }
+    });
   } catch {
     corpo.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-text">Errore nel caricamento</div></div></td></tr>`;
   }
@@ -581,6 +591,52 @@ function apriModal() {
 function chiudiModal() {
   document.getElementById('routeModal').classList.remove('show');
   document.body.style.overflow = '';
+}
+
+// ===== NOTIFICHE TOAST =====
+
+// Mostra una notifica temporanea in alto a destra
+function mostraNotifica(messaggio) {
+  const contenitore = document.getElementById('toastContainer');
+  if (!contenitore) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<span class="toast-icon">&#9888;&#65039;</span> ${escapeHtml(messaggio)}`;
+  contenitore.appendChild(toast);
+  // Dopo 4 secondi, rimuovi la notifica con animazione
+  setTimeout(() => {
+    toast.classList.add('toast-hide');
+    setTimeout(() => toast.remove(), 400);
+  }, 4000);
+}
+
+// ===== NEWS IN TEMPO REALE =====
+
+// Carica le notizie dall'endpoint news di Trenitalia
+async function caricaNews() {
+  const contenitore = document.getElementById('newsContent');
+  if (!contenitore) return;
+  contenitore.innerHTML = `<div class="loading-spinner"><div class="spinner"></div></div>`;
+
+  try {
+    const risposta = await fetch(`${API}?action=news`);
+    const notizie = await risposta.json();
+
+    if (!Array.isArray(notizie) || !notizie.length) {
+      contenitore.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;">${t('noResults')}</div>`;
+      return;
+    }
+
+    // Mostra le prime 5 notizie
+    contenitore.innerHTML = notizie.slice(0, 5).map(news => `
+      <div class="news-item">
+        <div class="news-title">${escapeHtml(news.titolo || '')}</div>
+        <div class="news-desc">${escapeHtml(news.testo || '')}</div>
+      </div>
+    `).join('');
+  } catch {
+    contenitore.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;">${t('noResults')}</div>`;
+  }
 }
 
 // ===== FUNZIONI DI SUPPORTO =====
