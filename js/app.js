@@ -620,6 +620,9 @@ function mostraNotifica(messaggio) {
 
 // ===== NEWS IN TEMPO REALE =====
 
+let listaNews = [];
+let indiceNews = 0;
+
 // Carica le notizie dall'endpoint news di Trenitalia
 async function caricaNews() {
   const contenitore = document.getElementById('newsContent');
@@ -635,16 +638,39 @@ async function caricaNews() {
       return;
     }
 
-    // Mostra le prime 5 notizie (cliccabili per espandere)
-    contenitore.innerHTML = notizie.slice(0, 5).map(news => `
-      <div class="news-item" onclick="this.classList.toggle('expanded')">
-        <div class="news-title">${escapeHtml(news.titolo || '')}</div>
-        <div class="news-desc">${escapeHtml(news.testo || '')}</div>
-      </div>
-    `).join('');
+    listaNews = notizie;
+    indiceNews = 0;
+    mostraNewsCorrente();
   } catch {
     contenitore.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;">${t('noResults')}</div>`;
   }
+}
+
+// Mostra la notizia all'indice corrente
+function mostraNewsCorrente() {
+  const contenitore = document.getElementById('newsContent');
+  const contatore = document.getElementById('newsCounter');
+  if (!contenitore || !listaNews.length) return;
+
+  const news = listaNews[indiceNews];
+  contenitore.innerHTML = `
+    <div class="news-item" onclick="this.classList.toggle('expanded')">
+      <div class="news-title">${escapeHtml(news.titolo || '')}</div>
+      <div class="news-desc">${escapeHtml(news.testo || '')}</div>
+    </div>
+  `;
+
+  if (contatore) contatore.textContent = `${indiceNews + 1}/${listaNews.length}`;
+  document.getElementById('newsPrev').disabled = indiceNews === 0;
+  document.getElementById('newsNext').disabled = indiceNews === listaNews.length - 1;
+}
+
+// Cambia notizia avanti (+1) o indietro (-1)
+function cambiaNews(direzione) {
+  indiceNews += direzione;
+  if (indiceNews < 0) indiceNews = 0;
+  if (indiceNews >= listaNews.length) indiceNews = listaNews.length - 1;
+  mostraNewsCorrente();
 }
 
 // ===== FUNZIONI DI SUPPORTO =====

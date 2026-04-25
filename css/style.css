@@ -1015,13 +1015,49 @@ a:hover { color: var(--accent-hover); }
 }
 
 /* ==================== News Widget ==================== */
-.news-item {
-  padding: 0.6rem 0;
-  border-bottom: 1px solid var(--border-light);
-  cursor: pointer;
+.news-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
-.news-item:last-child { border-bottom: none; }
+.news-nav-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+
+.news-nav-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.news-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.news-counter {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.news-item {
+  padding: 0.6rem 0;
+  cursor: pointer;
+}
 
 .news-item.expanded .news-desc {
   -webkit-line-clamp: unset;

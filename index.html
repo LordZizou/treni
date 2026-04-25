@@ -151,6 +151,11 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">&#128240; <span data-i18n="news">Notizie</span></div>
+            <div class="news-nav">
+              <button class="news-nav-btn" id="newsPrev" onclick="cambiaNews(-1)">&#8249;</button>
+              <span class="news-counter" id="newsCounter"></span>
+              <button class="news-nav-btn" id="newsNext" onclick="cambiaNews(1)">&#8250;</button>
+            </div>
           </div>
           <div class="card-body" id="newsContent">
             <div style="color:var(--text-muted);font-size:0.85rem;" data-i18n="loading">Caricamento...</div>
