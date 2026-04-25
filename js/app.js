@@ -349,11 +349,19 @@ function mostraPercorsoTreno(dati, contenitore) {
   // Dati delle fermate (le coordinate vengono aggiunte dopo)
   const datiPerMappa = [];
 
+  // Trova l'ultima fermata con dati reali (= posizione attuale del treno)
+  let indicePosizione = -1;
+  fermate.forEach((fermata, i) => {
+    if (fermata.actualFermataType === 1 || fermata.arrivoReale != null || fermata.partenzaReale != null) {
+      indicePosizione = i;
+    }
+  });
+
   fermate.forEach((fermata, i) => {
     const isPrima = i === 0;
     const isUltima = i === fermate.length - 1;
     const passata = fermata.actualFermataType === 1 || fermata.arrivoReale != null || fermata.partenzaReale != null;
-    const eCorrente = passata && i < fermate.length - 1 && !fermate[i + 1]?.arrivoReale;
+    const eCorrente = i === indicePosizione && !isUltima;
 
     let classe = '';
     if (isPrima) classe = 'first visited';
