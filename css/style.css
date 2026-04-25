@@ -1018,9 +1018,15 @@ a:hover { color: var(--accent-hover); }
 .news-item {
   padding: 0.6rem 0;
   border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
 }
 
 .news-item:last-child { border-bottom: none; }
+
+.news-item.expanded .news-desc {
+  -webkit-line-clamp: unset;
+  display: block;
+}
 
 .news-title {
   font-weight: 600;

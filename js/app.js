@@ -627,9 +627,9 @@ async function caricaNews() {
       return;
     }
 
-    // Mostra le prime 5 notizie
+    // Mostra le prime 5 notizie (cliccabili per espandere)
     contenitore.innerHTML = notizie.slice(0, 5).map(news => `
-      <div class="news-item">
+      <div class="news-item" onclick="this.classList.toggle('expanded')">
         <div class="news-title">${escapeHtml(news.titolo || '')}</div>
         <div class="news-desc">${escapeHtml(news.testo || '')}</div>
       </div>
