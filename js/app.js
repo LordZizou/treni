@@ -385,7 +385,8 @@ function mostraPercorsoTreno(dati, contenitore) {
       scheduledDeparture: depPrevisto,
       actualArrival: arrReale,
       actualDeparture: depReale,
-      delay: ritardoFermata
+      delay: ritardoFermata,
+      posizioneTreno: eCorrente  // true se il treno si trova qui
     });
   });
 
@@ -419,7 +420,8 @@ async function caricaCoordinateFermate(fermate) {
           scheduledDeparture: fermata.scheduledDeparture,
           actualArrival: fermata.actualArrival,
           actualDeparture: fermata.actualDeparture,
-          delay: fermata.delay
+          delay: fermata.delay,
+          posizioneTreno: fermata.posizioneTreno || false
         });
       }
     });

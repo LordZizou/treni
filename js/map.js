@@ -25,19 +25,6 @@ function clearMap() {
   }
 }
 
-// Mostra una singola stazione sulla mappa con un marker
-function showStationOnMap(name, lat, lng) {
-  if (!map) initMap();
-  clearMap();
-  const marker = L.marker([lat, lng])
-    .addTo(map)
-    .bindPopup(`<strong>${escapeHtml(name)}</strong>`)
-    .openPopup();
-  mapMarkers.push(marker);
-  map.setView([lat, lng], 13);
-  showMapPanel();
-}
-
 // Mostra il percorso completo di un treno con tutte le fermate
 function showTrainRouteOnMap(fermate) {
   if (!map) initMap();
@@ -45,7 +32,7 @@ function showTrainRouteOnMap(fermate) {
 
   const coords = [];
 
-  // Icone diverse per le varie fermate
+  // Icone per i vari tipi di fermata
   const iconaTerminale = L.divIcon({
     className: 'train-map-icon',
     html: '<span class="train-marker"></span>',
@@ -56,26 +43,33 @@ function showTrainRouteOnMap(fermate) {
     html: '<span class="station-marker"></span>',
     iconSize: [10, 10], iconAnchor: [5, 5]
   });
-  const iconaCorrente = L.divIcon({
-    className: 'station-map-icon current',
-    html: '<span class="station-marker current"></span>',
-    iconSize: [16, 16], iconAnchor: [8, 8]
+  // Pallino rosso pulsante che indica dove si trova il treno in questo momento
+  const iconaPosizioneTreno = L.divIcon({
+    className: 'train-position-icon',
+    html: '<span class="train-position-marker"></span>',
+    iconSize: [20, 20], iconAnchor: [10, 10]
   });
 
   fermate.forEach((fermata, i) => {
     if (!fermata.lat || !fermata.lng) return;
     coords.push([fermata.lat, fermata.lng]);
 
-    // Sceglie l'icona giusta in base alla posizione del treno
-    const eCorrente = fermata.actualDeparture && !fermata.actualArrival && i > 0;
-    const icona = eCorrente ? iconaCorrente :
-                  (i === 0 || i === fermate.length - 1) ? iconaTerminale : iconaFermata;
+    // Se il treno si trova qui, usa il pallino rosso, altrimenti l'icona normale
+    let icona;
+    if (fermata.posizioneTreno) {
+      icona = iconaPosizioneTreno;
+    } else if (i === 0 || i === fermate.length - 1) {
+      icona = iconaTerminale;
+    } else {
+      icona = iconaFermata;
+    }
 
     const ritardoTesto = fermata.delay > 0 ? ` (+${fermata.delay} min)` :
                          fermata.delay < 0 ? ` (${fermata.delay} min)` : '';
 
     const popup = `
-      <strong>${escapeHtml(fermata.name)}</strong><br>
+      <strong>${escapeHtml(fermata.name)}</strong>
+      ${fermata.posizioneTreno ? '<br><em>Treno qui</em>' : ''}<br>
       ${fermata.scheduledArrival ? 'Arr: ' + fermata.scheduledArrival : ''}
       ${fermata.scheduledDeparture ? ' Dep: ' + fermata.scheduledDeparture : ''}
       ${ritardoTesto ? '<br><span>' + ritardoTesto + '</span>' : ''}
@@ -84,6 +78,10 @@ function showTrainRouteOnMap(fermate) {
     const marker = L.marker([fermata.lat, fermata.lng], { icon: icona })
       .addTo(map)
       .bindPopup(popup);
+
+    // Apre automaticamente il popup sulla posizione del treno
+    if (fermata.posizioneTreno) marker.openPopup();
+
     mapMarkers.push(marker);
   });
 
