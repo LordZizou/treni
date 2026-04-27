@@ -578,12 +578,13 @@ a:hover { color: var(--accent-hover); }
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: 100%;
-  max-width: 700px;
-  max-height: 85vh;
+  max-width: 1200px;
+  height: 85vh;
   display: flex;
   flex-direction: column;
   transform: translateY(20px) scale(0.97);
   transition: transform 0.3s ease;
+  overflow: hidden;
 }
 
 .modal-overlay.show .modal {
@@ -623,10 +624,28 @@ a:hover { color: var(--accent-hover); }
   color: #fff;
 }
 
+.modal-content-wrapper {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
 .modal-body {
   padding: 1.5rem;
   overflow-y: auto;
   flex: 1;
+  border-right: 1px solid var(--border);
+}
+
+.modal-map-container {
+  flex: 1.2;
+  background: var(--bg-tertiary);
+  position: relative;
+}
+
+#mapContainer {
+  height: 100%;
+  width: 100%;
 }
 
 /* Route Timeline */
@@ -730,60 +749,15 @@ a:hover { color: var(--accent-hover); }
   font-weight: 600;
 }
 
-/* ==================== Map Panel ==================== */
-.map-panel {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 0;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border);
-  z-index: 90;
-  transition: height 0.4s ease;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-}
-
-.map-panel.active { height: 45vh; }
-
-.map-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.map-panel-title {
-  font-weight: 700;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.map-close-btn {
-  border: none;
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  width: 28px;
-  height: 28px;
+/* Map markers */
+.train-marker {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background: var(--accent, #2563eb);
+  border: 2px solid #fff;
   border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-}
-
-.map-close-btn:hover {
-  background: var(--danger);
-  color: #fff;
-}
-
-#mapContainer {
-  height: calc(45vh - 45px);
-  width: 100%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 /* Map markers */
@@ -948,11 +922,10 @@ a:hover { color: var(--accent-hover); }
   .card-header { padding: 0.75rem 1rem; }
   .card-body { padding: 1rem; }
 
-  .modal { max-height: 90vh; }
-  .modal-body { padding: 1rem; }
-
-  .map-panel.active { height: 55vh; }
-  #mapContainer { height: calc(55vh - 45px); }
+  .modal { max-height: 95vh; height: 95vh; }
+  .modal-content-wrapper { flex-direction: column; }
+  .modal-body { border-right: none; border-bottom: 1px solid var(--border); flex: 1; }
+  .modal-map-container { flex: 1; min-height: 300px; }
 
   .route-info-bar { font-size: 0.8rem; gap: 0.5rem; }
 }

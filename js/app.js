@@ -88,11 +88,10 @@ function collegaEventi() {
     }
   });
 
-  // Chiudi modal e mappa con Escape
+  // Chiudi modal con Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       chiudiModal();
-      hideMapPanel();
     }
   });
 
@@ -340,9 +339,7 @@ function mostraPercorsoTreno(dati, contenitore) {
       <div class="route-info-item">${badgeRitardo}</div>
       ${ultimoRilevamento ? `<div class="route-info-item"><span class="route-info-label">${t('lastUpdate')}:</span> ${escapeHtml(ultimoRilevamento)}</div>` : ''}
     </div>
-    <button class="tab-btn" id="routeMapBtn" onclick="mostraMappa()" style="margin-bottom:1rem;" disabled>
-      &#128506; ${t('showOnMap')} (${t('loading')})
-    </button>
+
     <div class="route-timeline">
   `;
 
@@ -446,19 +443,12 @@ async function caricaCoordinateFermate(fermate) {
 
     window._fermateCorrente = fermateConCoordinate;
 
-    // Abilita il pulsante mappa
-    const btn = document.getElementById('routeMapBtn');
-    if (btn) {
-      if (fermateConCoordinate.length > 0) {
-        btn.disabled = false;
-        btn.innerHTML = `&#128506; ${t('showOnMap')}`;
-      } else {
-        btn.innerHTML = `&#128506; ${t('map')} (N/A)`;
-      }
+    // Mostra automaticamente sulla mappa se ci sono coordinate
+    if (fermateConCoordinate.length > 0) {
+      showTrainRouteOnMap(fermateConCoordinate);
     }
   } catch {
-    const btn = document.getElementById('routeMapBtn');
-    if (btn) btn.innerHTML = `&#128506; ${t('map')} (N/A)`;
+    /* coordinate non disponibili */
   }
 }
 
@@ -599,6 +589,7 @@ function apriModal() {
 function chiudiModal() {
   document.getElementById('routeModal').classList.remove('show');
   document.body.style.overflow = '';
+  if (typeof clearMap === 'function') clearMap();
 }
 
 // ===== NOTIFICHE TOAST =====

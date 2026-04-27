@@ -98,23 +98,8 @@ function showTrainRouteOnMap(fermate) {
     map.setView(coords[0], 12);
   }
 
-  showMapPanel();
-}
-
-// Apre il pannello della mappa in fondo alla pagina
-function showMapPanel() {
-  const pannello = document.getElementById('mapPanel');
-  if (pannello) {
-    pannello.classList.add('active');
-    // Dopo l'animazione CSS, ricalcola le dimensioni della mappa
-    setTimeout(() => map.invalidateSize(), 300);
-  }
-}
-
-// Chiude il pannello della mappa
-function hideMapPanel() {
-  const pannello = document.getElementById('mapPanel');
-  if (pannello) pannello.classList.remove('active');
+  // Ricalcola le dimensioni della mappa per sicurezza
+  setTimeout(() => map.invalidateSize(), 100);
 }
 
 // Converte testo in HTML sicuro per evitare problemi di sicurezza (XSS)

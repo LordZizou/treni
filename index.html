@@ -177,22 +177,16 @@
         <div class="modal-title" id="modalTitle" data-i18n="trainRoute">Percorso treno</div>
         <button class="modal-close" onclick="chiudiModal()" title="Chiudi">&times;</button>
       </div>
-      <div class="modal-body" id="modalBody">
-        <div class="empty-state">
-          <div class="empty-state-icon">&#128646;</div>
-          <div class="empty-state-text" data-i18n="searchByTrain">Cerca per numero treno</div>
+      <div class="modal-content-wrapper">
+        <div class="modal-body" id="modalBody">
+          <div class="empty-state">
+            <div class="empty-state-icon">&#128646;</div>
+            <div class="empty-state-text" data-i18n="searchByTrain">Cerca per numero treno</div>
+          </div>
         </div>
+        <div class="modal-map-container" id="mapContainer"></div>
       </div>
     </div>
-  </div>
-
-  <!-- ==================== Map Panel ==================== -->
-  <div class="map-panel" id="mapPanel">
-    <div class="map-panel-header">
-      <div class="map-panel-title">&#128506; <span data-i18n="map">Mappa</span></div>
-      <button class="map-close-btn" onclick="hideMapPanel()">&times;</button>
-    </div>
-    <div id="mapContainer"></div>
   </div>
 
   <!-- ==================== Scripts ==================== -->
