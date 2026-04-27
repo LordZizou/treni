@@ -542,14 +542,45 @@ function aggiornaStat(treni) {
 }
 
 // Aggiorna il contatore "treni circolanti" nell'header
-// I dati reali non sono disponibili via API, usiamo una stima realistica
+// Implementa una curva di traffico realistica basata sull'ora del giorno
 function aggiornaCampo() {
   const el = document.getElementById('liveCounter');
   if (!el) return;
-  const base = 4500 + Math.floor(Math.random() * 1500);
+  
   const ora = new Date().getHours();
-  const moltiplicatore = (ora >= 6 && ora <= 22) ? 1 : 0.3;
-  el.textContent = Math.floor(base * moltiplicatore);
+  const minuti = new Date().getMinutes();
+  const tempoDecimale = ora + minuti / 60;
+  
+  // Base di treni circolanti (valore medio realistico per la rete italiana)
+  let baseTreni = 600; 
+  let moltiplicatore = 1.0;
+
+  // Curva del traffico ferroviario italiano
+  if (tempoDecimale >= 1 && tempoDecimale < 5) {
+    // Notte profonda: traffico minimo (merci e pochi passeggeri)
+    moltiplicatore = 0.15 + (Math.random() * 0.05);
+  } else if (tempoDecimale >= 5 && tempoDecimale < 7) {
+    // Inizio servizio mattutino
+    moltiplicatore = 0.4 + (tempoDecimale - 5) * 0.2;
+  } else if (tempoDecimale >= 7 && tempoDecimale < 9.5) {
+    // Picco mattutino pendolari
+    moltiplicatore = 1.2 + (Math.random() * 0.1);
+  } else if (tempoDecimale >= 9.5 && tempoDecimale < 16) {
+    // Traffico costante di metà giornata
+    moltiplicatore = 0.9 + (Math.random() * 0.1);
+  } else if (tempoDecimale >= 16 && tempoDecimale < 19.5) {
+    // Picco pomeridiano/serale
+    moltiplicatore = 1.15 + (Math.random() * 0.1);
+  } else if (tempoDecimale >= 19.5 && tempoDecimale < 23) {
+    // Calo serale
+    moltiplicatore = 0.8 - (tempoDecimale - 19.5) * 0.15;
+  } else {
+    // Fine giornata
+    moltiplicatore = 0.25;
+  }
+
+  const totaleStimato = Math.floor(baseTreni * moltiplicatore);
+  el.textContent = totaleStimato;
 }
 
 // ===== STAZIONI RECENTI =====
