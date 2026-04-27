@@ -112,6 +112,7 @@ Abbiamo usato un design moderno e pulito. Abbiamo aggiunto anche la **Modalità 
 - **Notifiche ritardo**: Se un treno ha più di 10 minuti di ritardo, compare un avviso colorato per avvertire subito l'utente.
 - **Meteo**: Accanto alla stazione viene mostrato se c'è il sole o se piove.
 - **Stazioni recenti**: Il sito si ricorda delle ultime stazioni cercate e le mostra come tasti veloci.
+- **La ricerca treno funziona sia mettendo solo il numero (es. "665") sia con la sigla (es. "REG 665").
 
 ---
 
@@ -120,7 +121,7 @@ Abbiamo usato un design moderno e pulito. Abbiamo aggiunto anche la **Modalità 
 Abbiamo testato a lungo il sito per assicurarci che non ci fossero errori. Ecco i test principali che abbiamo fatto:
 
 **Ricerca e Navigazione**
-- L'autocompletamento funziona anche scrivendo solo poche lettere (es. "roma t" trova "Roma Termini").
+- L'autocompletamento funziona anche scrivendo solo poche lettere.
 - La ricerca treno funziona sia mettendo solo il numero (es. "665") sia con la sigla (es. "REG 665").
 - I tasti per cambiare tra "Partenze" e "Arrivi" aggiornano subito la tabella senza errori.
 
