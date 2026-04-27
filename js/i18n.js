@@ -2,7 +2,10 @@
 // Ogni testo dell'interfaccia ha una chiave (es. 'departures')
 // e viene tradotto nella lingua scelta dall'utente.
 
+// ===== DIZIONARIO TRADUZIONI =====
+
 const I18N = {
+  // Traduzioni in Italiano
   it: {
     appName: 'BinarioLive',
     tagline: 'Monitoraggio treni in tempo reale',
@@ -60,6 +63,7 @@ const I18N = {
     stops: 'fermate',
     news: 'Notizie',
   },
+  // Traduzioni in Inglese
   en: {
     appName: 'BinarioLive',
     tagline: 'Real-time train monitoring',
@@ -119,8 +123,12 @@ const I18N = {
   }
 };
 
+// ===== STATO INTERNAZIONALIZZAZIONE =====
+
 // Lingua attuale: letta dal localStorage o italiano di default
 let currentLang = localStorage.getItem('bl_lang') || 'it';
+
+// ===== FUNZIONI DI TRADUZIONE =====
 
 // Restituisce il testo nella lingua corrente, con fallback all'italiano
 function t(key) {
@@ -139,6 +147,7 @@ function setLang(lang) {
 function updateAllTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
+    // Gestione specifica per i placeholder degli input
     if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
       el.placeholder = t(key);
     } else {

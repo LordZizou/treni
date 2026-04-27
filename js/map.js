@@ -1,14 +1,20 @@
 // Gestione della mappa con Leaflet.js
 // Mostra la posizione delle stazioni e il percorso dei treni
 
+// ===== VARIABILI GLOBALI MAPPA =====
+
 let map = null;
 let mapMarkers = [];
 let routePolyline = null;
 
+// ===== FUNZIONI DI INIZIALIZZAZIONE E PULIZIA =====
+
 // Crea la mappa centrata sull'Italia (solo la prima volta)
 function initMap() {
   if (map) return;
+  // Inizializza la mappa sull'elemento #mapContainer
   map = L.map('mapContainer').setView([41.9028, 12.4964], 6);
+  // Aggiunge il layer delle piastrelle (tiles) di OpenStreetMap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 18
@@ -17,13 +23,17 @@ function initMap() {
 
 // Rimuove tutti i marker e la linea del percorso dalla mappa
 function clearMap() {
+  // Rimuove ogni marker salvato nell'array
   mapMarkers.forEach(m => map.removeLayer(m));
   mapMarkers = [];
+  // Rimuove la linea del percorso se esistente
   if (routePolyline) {
     map.removeLayer(routePolyline);
     routePolyline = null;
   }
 }
+
+// ===== FUNZIONI DI VISUALIZZAZIONE =====
 
 // Mostra il percorso completo di un treno con tutte le fermate
 function showTrainRouteOnMap(fermate) {
@@ -32,7 +42,7 @@ function showTrainRouteOnMap(fermate) {
 
   const coords = [];
 
-  // Icone per i vari tipi di fermata
+  // Definizione delle icone personalizzate per i vari tipi di fermata
   const iconaTerminale = L.divIcon({
     className: 'train-map-icon',
     html: '<span class="train-marker"></span>',
@@ -50,11 +60,12 @@ function showTrainRouteOnMap(fermate) {
     iconSize: [20, 20], iconAnchor: [10, 10]
   });
 
+  // Itera sulle fermate per posizionare i marker
   fermate.forEach((fermata, i) => {
     if (!fermata.lat || !fermata.lng) return;
     coords.push([fermata.lat, fermata.lng]);
 
-    // Se il treno si trova qui, usa il pallino rosso, altrimenti l'icona normale
+    // Scelta dell'icona in base al tipo di fermata
     let icona;
     if (fermata.posizioneTreno) {
       icona = iconaPosizioneTreno;
@@ -64,9 +75,11 @@ function showTrainRouteOnMap(fermate) {
       icona = iconaFermata;
     }
 
+    // Costruzione del testo del ritardo per il popup
     const ritardoTesto = fermata.delay > 0 ? ` (+${fermata.delay} min)` :
                          fermata.delay < 0 ? ` (${fermata.delay} min)` : '';
 
+    // HTML del popup informativo
     const popup = `
       <strong>${escapeHtml(fermata.name)}</strong>
       ${fermata.posizioneTreno ? '<br><em>Treno qui</em>' : ''}<br>
@@ -75,17 +88,18 @@ function showTrainRouteOnMap(fermate) {
       ${ritardoTesto ? '<br><span>' + ritardoTesto + '</span>' : ''}
     `;
 
+    // Creazione e aggiunta del marker alla mappa
     const marker = L.marker([fermata.lat, fermata.lng], { icon: icona })
       .addTo(map)
       .bindPopup(popup);
 
-    // Apre automaticamente il popup sulla posizione del treno
+    // Apre automaticamente il popup sulla posizione attuale del treno
     if (fermata.posizioneTreno) marker.openPopup();
 
     mapMarkers.push(marker);
   });
 
-  // Disegna la linea tratteggiata che collega le fermate
+  // Disegna la linea tratteggiata (polyline) che collega le fermate
   if (coords.length > 1) {
     routePolyline = L.polyline(coords, {
       color: 'var(--accent, #2563eb)',
@@ -93,14 +107,18 @@ function showTrainRouteOnMap(fermate) {
       opacity: 0.7,
       dashArray: '8 4'
     }).addTo(map);
+    // Adatta la visuale della mappa per contenere tutto il percorso
     map.fitBounds(routePolyline.getBounds(), { padding: [30, 30] });
   } else if (coords.length === 1) {
+    // Se c'è una sola fermata, centra la mappa su di essa
     map.setView(coords[0], 12);
   }
 
-  // Ricalcola le dimensioni della mappa per sicurezza
+  // Ricalcola le dimensioni della mappa per risolvere eventuali problemi di rendering in modale
   setTimeout(() => map.invalidateSize(), 100);
 }
+
+// ===== UTILITY =====
 
 // Converte testo in HTML sicuro per evitare problemi di sicurezza (XSS)
 function escapeHtml(str) {

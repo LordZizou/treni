@@ -1,12 +1,16 @@
 // Logica principale di BinarioLive
 // Gestisce la ricerca stazioni, il caricamento dei treni e il meteo
 
+// ===== COSTANTI E STATO GLOBALE =====
+
 const API = 'api/proxy.php';
 const SOGLIA_RITARDO = 10;     // Minuti: se un treno supera questa soglia, mostra notifica
 let stazioneCorrente = null;
 let tabCorrente = 'departures';
 let timerStazione = null;
 let timerTreno = null;
+
+// ===== INIZIALIZZAZIONE =====
 
 // Avvio: quando la pagina è pronta, inizializza tema, lingua e eventi
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,11 +26,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===== TEMA CHIARO / SCURO =====
 
+// Carica il tema salvato o imposta quello chiaro di default
 function inizializzaTema() {
   const tema = localStorage.getItem('bl_theme') || 'light';
   document.documentElement.setAttribute('data-theme', tema);
 }
 
+// Alterna tra tema chiaro e scuro e salva la preferenza
 function cambiaTema() {
   const temaCorrente = document.documentElement.getAttribute('data-theme');
   const nuovoTema = temaCorrente === 'dark' ? 'light' : 'dark';
@@ -36,6 +42,7 @@ function cambiaTema() {
 
 // ===== LINGUA =====
 
+// Imposta la lingua iniziale dell'applicazione
 function inizializzaLingua() {
   const lingua = localStorage.getItem('bl_lang') || 'it';
   currentLang = lingua;
@@ -45,13 +52,14 @@ function inizializzaLingua() {
   });
 }
 
-// ===== EVENTI =====
+// ===== GESTIONE EVENTI =====
 
+// Collega i listener agli elementi interattivi della pagina
 function collegaEventi() {
   // Toggle tema
   document.getElementById('themeToggle').addEventListener('click', cambiaTema);
 
-  // Pulsanti lingua
+  // Pulsanti selettore lingua
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
@@ -61,7 +69,7 @@ function collegaEventi() {
     });
   });
 
-  // Campo ricerca stazione: aspetta 250ms prima di fare la ricerca
+  // Campo ricerca stazione: implementa debouncing per evitare troppe chiamate API
   const campoStazione = document.getElementById('stationSearch');
   campoStazione.addEventListener('input', () => {
     clearTimeout(timerStazione);
@@ -71,7 +79,7 @@ function collegaEventi() {
     if (campoStazione.value.length >= 2) autocompletaStazione(campoStazione.value);
   });
 
-  // Campo ricerca treno
+  // Campo ricerca treno per numero
   const campoTreno = document.getElementById('trainSearch');
   campoTreno.addEventListener('input', () => {
     clearTimeout(timerTreno);
@@ -81,21 +89,21 @@ function collegaEventi() {
     if (campoTreno.value.length >= 1) autocompletaTreno(campoTreno.value);
   });
 
-  // Chiudi i dropdown quando si clicca fuori
+  // Chiudi i dropdown dei suggerimenti quando si clicca altrove
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.search-box')) {
       document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.remove('show'));
     }
   });
 
-  // Chiudi modal con Escape
+  // Chiudi la modale premendo il tasto Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       chiudiModal();
     }
   });
 
-  // Pulsanti tab Partenze / Arrivi
+  // Pulsanti per cambiare tab tra Partenze e Arrivi
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -108,6 +116,7 @@ function collegaEventi() {
 
 // ===== AUTOCOMPLETAMENTO STAZIONE =====
 
+// Cerca le stazioni corrispondenti al testo inserito
 async function autocompletaStazione(query) {
   const lista = document.getElementById('stationList');
   if (query.length < 2) { lista.classList.remove('show'); return; }
@@ -120,7 +129,7 @@ async function autocompletaStazione(query) {
   }
 }
 
-// Mostra il dropdown con i risultati dell'autocompletamento
+// Genera l'HTML per i suggerimenti nel dropdown
 function mostraDropdown(contenitore, elementi, allaClick) {
   if (!elementi.length) { contenitore.classList.remove('show'); return; }
   contenitore.innerHTML = elementi.map((el, i) => `
@@ -138,7 +147,7 @@ function mostraDropdown(contenitore, elementi, allaClick) {
   });
 }
 
-// Quando l'utente clicca su una stazione: carica treni, meteo e coordinate mappa
+// Gestisce la selezione di una stazione dalla lista
 async function selezionaStazione(stazione) {
   stazioneCorrente = stazione;
   document.getElementById('stationSearch').value = stazione.name;
@@ -149,7 +158,7 @@ async function selezionaStazione(stazione) {
   caricaMeteo(stazione.code);
   logRicerca(stazione.code, stazione.name, tabCorrente === 'departures' ? 'departure' : 'arrival');
 
-  // Recupera le coordinate GPS per il pulsante mappa
+  // Recupera le coordinate GPS per centrare la mappa sulla stazione
   try {
     const risposta = await fetch(`${API}?action=stationDetail&code=${stazione.code}`);
     const coords = await risposta.json();
@@ -162,6 +171,7 @@ async function selezionaStazione(stazione) {
 
 // ===== RICERCA TRENO PER NUMERO =====
 
+// Cerca un treno specifico tramite il suo numero identificativo
 async function autocompletaTreno(query) {
   const lista = document.getElementById('trainList');
   if (query.length < 1) { lista.classList.remove('show'); return; }
@@ -191,6 +201,7 @@ async function autocompletaTreno(query) {
 
 // ===== TABELLA TRENI =====
 
+// Carica la lista dei treni (partenze o arrivi) per la stazione selezionata
 async function caricaTreni() {
   if (!stazioneCorrente) return;
 
@@ -198,7 +209,7 @@ async function caricaTreni() {
   const testa = document.getElementById('trainTableHead');
   corpo.innerHTML = `<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div> ${t('loading')}</div></td></tr>`;
 
-  // Costruisce la data nel formato che accetta Trenitalia
+  // Prepara la stringa della data corrente per la richiesta API
   const ora = new Date();
   const giorni = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const mesi = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -208,6 +219,7 @@ async function caricaTreni() {
   const azione = tabCorrente === 'departures' ? 'departures' : 'arrivals';
   const colonnaDestinazioneOrigine = tabCorrente === 'departures' ? t('destination') : t('origin');
 
+  // Aggiorna le intestazioni della tabella in base al tab selezionato
   testa.innerHTML = `
     <th>${t('train')}</th>
     <th>${colonnaDestinazioneOrigine}</th>
@@ -227,9 +239,10 @@ async function caricaTreni() {
       return;
     }
 
+    // Genera le righe della tabella
     corpo.innerHTML = treni.map(treno => creaRigaTreno(treno)).join('');
 
-    // Clic su una riga apre il percorso del treno
+    // Rende ogni riga cliccabile per aprire i dettagli del percorso
     corpo.querySelectorAll('tr[data-train]').forEach(riga => {
       riga.addEventListener('click', () => {
         caricaPercorsoTreno(riga.dataset.train, riga.dataset.origin, riga.dataset.dep);
@@ -238,7 +251,7 @@ async function caricaTreni() {
 
     aggiornaStat(treni);
 
-    // Notifica toast per i treni con ritardo sopra la soglia
+    // Mostra notifiche toast per treni con ritardo significativo
     treni.forEach(treno => {
       const ritardo = treno.ritardo ?? 0;
       if (ritardo >= SOGLIA_RITARDO) {
@@ -250,7 +263,7 @@ async function caricaTreni() {
   }
 }
 
-// Crea l'HTML di una singola riga della tabella treni
+// Crea l'HTML di una singola riga della tabella treni con i relativi badge di stato
 function creaRigaTreno(treno) {
   const categoria = treno.categoriaDescrizione || treno.categoria || '';
   const classCategoria = getClasseCategoria(treno.categoria || categoria);
@@ -263,7 +276,7 @@ function creaRigaTreno(treno) {
   const codOrigine = treno.codOrigine || '';
   const dataPartenza = treno.dataPartenzaTreno || '';
 
-  // Badge colorato per lo stato
+  // Determina il badge colorato da mostrare in base allo stato (in orario, ritardo, soppresso)
   let stato;
   if (treno.provvedimento === 1 || treno.subTitle?.includes('oppresso')) {
     stato = `<span class="status-badge status-cancelled">&#10005; ${t('cancelled')}</span>`;
@@ -289,6 +302,7 @@ function creaRigaTreno(treno) {
 
 // ===== PERCORSO TRENO =====
 
+// Recupera i dati del percorso di un treno e apre la modale dei dettagli
 async function caricaPercorsoTreno(numero, codOrigine, dataPartenza) {
   apriModal();
   const corpo = document.getElementById('modalBody');
@@ -311,7 +325,7 @@ async function caricaPercorsoTreno(numero, codOrigine, dataPartenza) {
   }
 }
 
-// Renderizza il percorso del treno nella modale con la timeline delle fermate
+// Renderizza il percorso del treno nella modale con la timeline delle fermate e la mappa
 function mostraPercorsoTreno(dati, contenitore) {
   const categoria = dati.categoria || '';
   const descCategoria = dati.categoriaDescrizione || dati.categoria || '';
@@ -343,10 +357,10 @@ function mostraPercorsoTreno(dati, contenitore) {
     <div class="route-timeline">
   `;
 
-  // Dati delle fermate (le coordinate vengono aggiunte dopo)
+  // Prepara i dati per la visualizzazione sulla mappa
   const datiPerMappa = [];
 
-  // Trova l'ultima fermata con dati reali (= posizione attuale del treno)
+  // Identifica l'ultima stazione raggiunta dal treno per mostrare la posizione attuale
   let indicePosizione = -1;
   fermate.forEach((fermata, i) => {
     if (fermata.actualFermataType === 1 || fermata.arrivoReale != null || fermata.partenzaReale != null) {
@@ -354,6 +368,7 @@ function mostraPercorsoTreno(dati, contenitore) {
     }
   });
 
+  // Genera l'HTML per ogni singola fermata nella timeline
   fermate.forEach((fermata, i) => {
     const isPrima = i === 0;
     const isUltima = i === fermate.length - 1;
@@ -408,12 +423,12 @@ function mostraPercorsoTreno(dati, contenitore) {
   html += '</div>';
   contenitore.innerHTML = html;
 
-  // Recupera le coordinate GPS delle fermate in background
+  // Recupera le coordinate GPS delle fermate per visualizzarle sulla mappa
   window._fermateCorrente = [];
   caricaCoordinateFermate(datiPerMappa);
 }
 
-// Recupera le coordinate GPS di tutte le fermate tramite la chiamata batch
+// Recupera le coordinate GPS di tutte le fermate tramite una chiamata batch all'API
 async function caricaCoordinateFermate(fermate) {
   const codici = fermate.map(f => f.codiceFermata).filter(Boolean);
   if (!codici.length) return;
@@ -422,7 +437,7 @@ async function caricaCoordinateFermate(fermate) {
     const risposta = await fetch(`${API}?action=stationDetail&codes=${codici.join(',')}`);
     const coordinate = await risposta.json();
 
-    // Aggiunge lat e lng a ogni fermata che ha le coordinate
+    // Associa le coordinate ricevute ad ogni fermata
     const fermateConCoordinate = [];
     fermate.forEach(fermata => {
       const coords = coordinate[fermata.codiceFermata];
@@ -443,7 +458,7 @@ async function caricaCoordinateFermate(fermate) {
 
     window._fermateCorrente = fermateConCoordinate;
 
-    // Mostra automaticamente sulla mappa se ci sono coordinate
+    // Se ci sono coordinate valide, aggiorna la mappa
     if (fermateConCoordinate.length > 0) {
       showTrainRouteOnMap(fermateConCoordinate);
     }
@@ -452,7 +467,7 @@ async function caricaCoordinateFermate(fermate) {
   }
 }
 
-// Mostra il percorso del treno sulla mappa
+// Forza la visualizzazione del percorso corrente sulla mappa
 function mostraMappa() {
   if (window._fermateCorrente && window._fermateCorrente.length) {
     showTrainRouteOnMap(window._fermateCorrente);
@@ -461,6 +476,7 @@ function mostraMappa() {
 
 // ===== METEO =====
 
+// Carica le informazioni meteo per la stazione selezionata
 async function caricaMeteo(codiceStazione) {
   const contenitore = document.getElementById('weatherWidget');
   contenitore.innerHTML = `<div class="loading-spinner"><div class="spinner"></div></div>`;
@@ -474,8 +490,8 @@ async function caricaMeteo(codiceStazione) {
       return;
     }
 
+    // Gestione dati provenienti da OpenWeatherMap
     if (dati.source === 'openweathermap') {
-      // Meteo da OpenWeatherMap
       const urlIcona = `https://openweathermap.org/img/wn/${dati.icon}@2x.png`;
       contenitore.innerHTML = `
         <div class="weather-widget">
@@ -491,7 +507,7 @@ async function caricaMeteo(codiceStazione) {
         </div>
       `;
     } else {
-      // Meteo da Trenitalia
+      // Gestione dati provenienti direttamente da Trenitalia
       const icona = getEmojiMeteo(dati.descrizione || '');
       const dettagliTemp = [];
       if (dati.tempMattino != null) dettagliTemp.push(`&#127749; ${dati.tempMattino}°`);
@@ -513,7 +529,7 @@ async function caricaMeteo(codiceStazione) {
   }
 }
 
-// Restituisce l'emoji giusta in base alla descrizione del meteo
+// Restituisce l'emoji corrispondente alla descrizione testuale del meteo
 function getEmojiMeteo(desc) {
   const d = desc.toLowerCase();
   if (d.includes('sereno') || d.includes('sole')) return '☀️';
@@ -527,7 +543,7 @@ function getEmojiMeteo(desc) {
 
 // ===== STATISTICHE =====
 
-// Conta i treni in orario, in ritardo e soppressi e aggiorna i contatori
+// Calcola e aggiorna i contatori di riepilogo per la stazione corrente
 function aggiornaStat(treni) {
   let inOrario = 0, inRitardo = 0, soppressi = 0;
   treni.forEach(treno => {
@@ -541,7 +557,7 @@ function aggiornaStat(treni) {
   document.getElementById('statCancelled').textContent = soppressi;
 }
 
-// Aggiorna il contatore "treni circolanti" nell'header con dati reali
+// Recupera e aggiorna il numero totale di treni circolanti sulla rete nazionale
 async function aggiornaCampo() {
   const el = document.getElementById('liveCounter');
   if (!el) return;
@@ -563,6 +579,7 @@ async function aggiornaCampo() {
 
 // ===== STAZIONI RECENTI =====
 
+// Salva la stazione cercata nel localStorage per mostrare i suggerimenti rapidi
 function salvaStazioneRecente(stazione) {
   let recenti = JSON.parse(localStorage.getItem('bl_recent') || '[]');
   recenti = recenti.filter(s => s.code !== stazione.code); // rimuovi se già presente
@@ -571,6 +588,7 @@ function salvaStazioneRecente(stazione) {
   localStorage.setItem('bl_recent', JSON.stringify(recenti));
 }
 
+// Genera e visualizza i chip delle stazioni cercate recentemente
 function mostraStazioniRecenti() {
   const contenitore = document.getElementById('recentStations');
   const recenti = JSON.parse(localStorage.getItem('bl_recent') || '[]');
@@ -590,11 +608,13 @@ function mostraStazioniRecenti() {
 
 // ===== MODAL PERCORSO =====
 
+// Mostra la finestra modale e blocca lo scroll della pagina sottostante
 function apriModal() {
   document.getElementById('routeModal').classList.add('show');
   document.body.style.overflow = 'hidden';
 }
 
+// Chiude la finestra modale e ripristina lo scroll
 function chiudiModal() {
   document.getElementById('routeModal').classList.remove('show');
   document.body.style.overflow = '';
@@ -603,7 +623,7 @@ function chiudiModal() {
 
 // ===== NOTIFICHE TOAST =====
 
-// Mostra una notifica temporanea in alto a destra
+// Genera una notifica temporanea (toast) per segnalare ritardi o problemi
 function mostraNotifica(messaggio) {
   const contenitore = document.getElementById('toastContainer');
   if (!contenitore) return;
@@ -611,7 +631,7 @@ function mostraNotifica(messaggio) {
   toast.className = 'toast';
   toast.innerHTML = `<span class="toast-icon">&#9888;&#65039;</span> ${escapeHtml(messaggio)}`;
   contenitore.appendChild(toast);
-  // Dopo 4 secondi, rimuovi la notifica con animazione
+  // Dopo 4 secondi, avvia l'animazione di uscita e rimuove l'elemento
   setTimeout(() => {
     toast.classList.add('toast-hide');
     setTimeout(() => toast.remove(), 400);
@@ -623,7 +643,7 @@ function mostraNotifica(messaggio) {
 let listaNews = [];
 let indiceNews = 0;
 
-// Carica le notizie dall'endpoint news di Trenitalia
+// Carica le ultime notizie e avvisi da Trenitalia
 async function caricaNews() {
   const contenitore = document.getElementById('newsContent');
   if (!contenitore) return;
@@ -646,7 +666,7 @@ async function caricaNews() {
   }
 }
 
-// Mostra la notizia all'indice corrente
+// Visualizza la notizia selezionata nel widget delle news
 function mostraNewsCorrente() {
   const contenitore = document.getElementById('newsContent');
   const contatore = document.getElementById('newsCounter');
@@ -665,7 +685,7 @@ function mostraNewsCorrente() {
   document.getElementById('newsNext').disabled = indiceNews === listaNews.length - 1;
 }
 
-// Cambia notizia avanti (+1) o indietro (-1)
+// Permette di navigare tra le diverse notizie caricate
 function cambiaNews(direzione) {
   indiceNews += direzione;
   if (indiceNews < 0) indiceNews = 0;
@@ -675,7 +695,7 @@ function cambiaNews(direzione) {
 
 // ===== FUNZIONI DI SUPPORTO =====
 
-// Converte un timestamp in orario leggibile (es. 1776290400000 -> "17:00")
+// Formatta un timestamp millisecondi in una stringa orario (HH:mm)
 function formattaOra(timestamp) {
   if (!timestamp) return '';
   const d = new Date(timestamp);
@@ -683,7 +703,7 @@ function formattaOra(timestamp) {
   return d.toLocaleTimeString(currentLang === 'it' ? 'it-IT' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-// Restituisce la classe CSS per il badge della categoria del treno
+// Restituisce la classe CSS corretta per colorare il badge in base alla categoria del treno (AV, REG, IC, ecc.)
 function getClasseCategoria(cat) {
   if (!cat) return 'cat-default';
   const c = cat.toUpperCase().trim();
@@ -697,7 +717,7 @@ function getClasseCategoria(cat) {
   return 'cat-default';
 }
 
-// Trasforma testo normale in HTML sicuro (previene attacchi XSS)
+// Sanifica le stringhe di testo per prevenire vulnerabilità XSS durante l'inserimento nel DOM
 function escapeHtml(str) {
   if (!str) return '';
   const div = document.createElement('div');
@@ -705,7 +725,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// Salva nel database la ricerca effettuata (per statistiche)
+// Invia i dati della ricerca al server per scopi statistici (log anonimo)
 async function logRicerca(codice, nome, tipo) {
   try {
     await fetch(`${API}?action=logSearch`, {

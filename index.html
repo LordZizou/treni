@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html lang="it" data-theme="light">
 <head>
+  <!-- ==================== Meta & SEO ==================== -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BinarioLive — Monitoraggio Treni in Tempo Reale</title>
   <meta name="description" content="Monitora i treni italiani in tempo reale: partenze, arrivi, ritardi e percorsi.">
+  
+  <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚆</text></svg>">
+  
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheets -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -17,20 +24,28 @@
   <!-- ==================== Header ==================== -->
   <header class="header">
     <div class="header-inner">
+      <!-- Logo -->
       <div class="logo">
         <div class="logo-icon">&#128646;</div>
         <span data-i18n="appName">BinarioLive</span>
       </div>
+      
+      <!-- Controlli: Badge Live, Lingua e Tema -->
       <div class="header-controls">
+        <!-- Contatore treni circolanti -->
         <div class="live-badge" title="Treni circolanti">
           <span style="color:var(--success);font-weight:700;font-size:0.85rem;">&#9679;</span>
           <span id="liveCounter" style="font-weight:700;font-size:0.9rem;">--</span>
           <span style="font-size:0.75rem;color:var(--text-muted);" data-i18n="liveTrains">Treni circolanti</span>
         </div>
+        
+        <!-- Selettore lingua -->
         <div class="lang-toggle">
           <button class="lang-btn active" data-lang="it">IT</button>
           <button class="lang-btn" data-lang="en">EN</button>
         </div>
+        
+        <!-- Toggle tema chiaro/scuro -->
         <div class="theme-toggle" id="themeToggle" title="Cambia tema">
           <span class="icon-sun">&#9728;&#65039;</span>
           <span class="icon-moon">&#127769;</span>
@@ -42,13 +57,16 @@
   <!-- ==================== Main Content ==================== -->
   <main class="main">
 
-    <!-- Search -->
+    <!-- Sezione di Ricerca: Stazione e Numero Treno -->
     <section class="search-section">
+      <!-- Ricerca Stazione -->
       <div class="search-box">
         <span class="search-icon">&#128269;</span>
         <input type="text" class="search-input" id="stationSearch" data-i18n="searchStation" placeholder="Cerca stazione..." autocomplete="off">
         <div class="autocomplete-list" id="stationList"></div>
       </div>
+      
+      <!-- Ricerca Treno -->
       <div class="search-box">
         <span class="search-icon">&#128646;</span>
         <input type="text" class="search-input" id="trainSearch" data-i18n="searchTrain" placeholder="Cerca numero treno..." autocomplete="off">
@@ -56,15 +74,15 @@
       </div>
     </section>
 
-    <!-- Recent Stations -->
+    <!-- Chip delle stazioni cercate recentemente -->
     <div id="recentStations" class="recent-stations"></div>
 
-    <!-- Content Grid -->
+    <!-- Griglia Principale: Tabella e Sidebar -->
     <div class="content-grid">
 
-      <!-- Train Table -->
+      <!-- Colonna Tabella Treni -->
       <div>
-        <!-- Tabs -->
+        <!-- Selettore Tab: Partenze / Arrivi -->
         <div style="display:flex;align-items:center;margin-bottom:1rem;gap:0.75rem;">
           <div class="tabs-bar">
             <button class="tab-btn active" data-tab="departures" data-i18n="departures">Partenze</button>
@@ -72,6 +90,7 @@
           </div>
         </div>
 
+        <!-- Card Tabella -->
         <div class="card">
           <div class="card-body no-pad">
             <div class="train-table-wrapper">
@@ -87,6 +106,7 @@
                   </tr>
                 </thead>
                 <tbody id="trainTableBody">
+                  <!-- Riga di default / caricamento -->
                   <tr>
                     <td colspan="6">
                       <div class="empty-state">
@@ -102,10 +122,10 @@
         </div>
       </div>
 
-      <!-- Sidebar -->
+      <!-- Colonna Sidebar: Widget e Info -->
       <div class="sidebar-widgets">
 
-        <!-- Stats Card -->
+        <!-- Card Statistiche: Riepilogo treni della stazione -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">&#128200; <span data-i18n="stats">Statistiche</span></div>
@@ -132,7 +152,7 @@
           </div>
         </div>
 
-        <!-- Weather Card -->
+        <!-- Card Meteo: Condizioni attuali nella stazione selezionata -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">&#127780;&#65039; <span data-i18n="weather">Meteo</span></div>
@@ -147,7 +167,7 @@
           </div>
         </div>
 
-        <!-- News Card -->
+        <!-- Card Notizie: Ultime info da Trenitalia -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">&#128240; <span data-i18n="news">Notizie</span></div>
@@ -168,29 +188,39 @@
   </main>
 
   <!-- ==================== Toast Notifications ==================== -->
+  <!-- Contenitore per le notifiche a comparsa -->
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- ==================== Train Route Modal ==================== -->
+  <!-- Finestra modale per visualizzare il percorso dettagliato e la mappa -->
   <div class="modal-overlay" id="routeModal">
     <div class="modal">
+      <!-- Header della modale -->
       <div class="modal-header">
         <div class="modal-title" id="modalTitle" data-i18n="trainRoute">Percorso treno</div>
         <button class="modal-close" onclick="chiudiModal()" title="Chiudi">&times;</button>
       </div>
+      
+      <!-- Contenuto della modale: Timeline e Mappa -->
       <div class="modal-content-wrapper">
+        <!-- Colonna Sinistra: Lista fermate -->
         <div class="modal-body" id="modalBody">
           <div class="empty-state">
             <div class="empty-state-icon">&#128646;</div>
             <div class="empty-state-text" data-i18n="searchByTrain">Cerca per numero treno</div>
           </div>
         </div>
+        <!-- Colonna Destra: Mappa Leaflet -->
         <div class="modal-map-container" id="mapContainer"></div>
       </div>
     </div>
   </div>
 
   <!-- ==================== Scripts ==================== -->
+  <!-- Librerie esterne -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  
+  <!-- Logica dell'applicazione -->
   <script src="js/i18n.js"></script>
   <script src="js/map.js"></script>
   <script src="js/app.js"></script>
