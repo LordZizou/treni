@@ -62,6 +62,18 @@ const I18N = {
     showOnMap: 'Mostra sulla mappa',
     stops: 'fermate',
     news: 'Notizie',
+    Sereno: 'Sereno',
+    'Poco nuvoloso': 'Poco nuvoloso',
+    Nuvoloso: 'Nuvoloso',
+    'Molto nuvoloso': 'Molto nuvoloso',
+    Coperto: 'Coperto',
+    Nebbia: 'Nebbia',
+    'Pioggia leggera': 'Pioggia leggera',
+    Pioggia: 'Pioggia',
+    'Pioggia forte': 'Pioggia forte',
+    Temporale: 'Temporale',
+    Neve: 'Neve',
+    Variabile: 'Variabile',
   },
   // Traduzioni in Inglese
   en: {
@@ -120,6 +132,18 @@ const I18N = {
     showOnMap: 'Show on map',
     stops: 'stops',
     news: 'News',
+    Sereno: 'Clear',
+    'Poco nuvoloso': 'Partly Cloudy',
+    Nuvoloso: 'Cloudy',
+    'Molto nuvoloso': 'Mostly Cloudy',
+    Coperto: 'Overcast',
+    Nebbia: 'Fog',
+    'Pioggia leggera': 'Light Rain',
+    Pioggia: 'Rain',
+    'Pioggia forte': 'Heavy Rain',
+    Temporale: 'Thunderstorm',
+    Neve: 'Snow',
+    Variabile: 'Variable',
   }
 };
 

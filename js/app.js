@@ -498,7 +498,7 @@ async function caricaMeteo(codiceStazione) {
           <img src="${urlIcona}" alt="meteo" class="weather-icon" width="60" height="60">
           <div class="weather-info">
             <div class="weather-temp">${Math.round(dati.temp)}°C</div>
-            <div class="weather-desc">${escapeHtml(dati.description)}</div>
+            <div class="weather-desc">${t(dati.description)}</div>
             <div class="weather-details">
               <span>&#128167; ${dati.humidity}%</span>
               <span>&#127788;&#65039; ${dati.wind} m/s</span>
@@ -518,7 +518,7 @@ async function caricaMeteo(codiceStazione) {
           <div class="weather-icon">${icona}</div>
           <div class="weather-info">
             <div class="weather-temp">${dati.temperatura != null ? dati.temperatura + '°C' : '--'}</div>
-            <div class="weather-desc">${escapeHtml(dati.descrizione || '')}</div>
+            <div class="weather-desc">${t(dati.descrizione || '')}</div>
             <div class="weather-details">${dettagliTemp.join(' &nbsp; ')}</div>
           </div>
         </div>
