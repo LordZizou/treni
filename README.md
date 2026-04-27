@@ -3,12 +3,12 @@
 ## Indice
 
 1. [Panoramica del progetto](#1-panoramica-del-progetto)
-2. [Come è organizzato il software](#2-come-è-organizzato-il-software)
+2. [Come abbiamo organizzato il software](#2-come-abbiamo-organizzato-il-software)
    - [Struttura delle cartelle](#21-struttura-delle-cartelle)
    - [Spiegazione dei file](#22-spiegazione-dei-file)
 3. [Il Backend — Come vengono presi i dati](#3-il-backend--come-vengono-presi-i-dati)
    - [Il sistema del Proxy](#31-il-sistema-del-proxy)
-   - [Gli Endpoint utilizzati](#32-gli-endpoint-utilizzati)
+   - [Gli Endpoint utilizzati (Tabella tecnica)](#32-gli-endpoint-utilizzati-tabella-tecnica)
    - [Salvataggio delle ricerche](#33-salvataggio-delle-ricerche)
 4. [Il Frontend — L'interfaccia per l'utente](#4-il-frontend--linterfaccia-per-lutente)
    - [Funzionamento del sito](#41-funzionamento-del-sito)
@@ -22,17 +22,17 @@
 
 ## 1. Panoramica del progetto
 
-**BinarioLive** è un sito web creato per permettere a chiunque di controllare i treni italiani in tempo reale. L'idea è stata quella di fare un'applicazione facile da usare, che funzioni bene sia sul computer che sul telefono, e che dia tutte le informazioni importanti come ritardi, binari e percorsi su mappa.
+**BinarioLive** è un sito web che abbiamo creato per permettere a chiunque di controllare i treni italiani in tempo reale. L'idea che ci siamo posti è stata quella di fare un'applicazione facile da usare, che funzioni bene sia sul computer che sul telefono, e che dia tutte le informazioni importanti come ritardi, binari e percorsi su mappa.
 
-Per farlo, il sito si collega ai sistemi ufficiali di Trenitalia e mostra i dati in modo chiaro e ordinato.
+Per farlo, abbiamo collegato il sito ai sistemi ufficiali di Trenitalia in modo da mostrare i dati in modo chiaro e ordinato agli utenti.
 
 ---
 
-## 2. Come è organizzato il software
+## 2. Come abbiamo organizzato il software
 
 ### 2.1 Struttura delle cartelle
 
-Ho diviso il lavoro in diverse cartelle per non fare confusione tra la parte che sta sul server e quella che vede l'utente:
+Abbiamo diviso il lavoro in diverse cartelle per non fare confusione tra la parte che sta sul server e quella che vede l'utente:
 
 ```text
 treni/
@@ -53,10 +53,10 @@ treni/
 
 ### 2.2 Spiegazione dei file
 
-- **index.html**: È lo scheletro del sito. Ho messo tutto in una sola pagina per rendere il passaggio tra le varie funzioni più veloce e senza attese.
-- **proxy.php**: È fondamentale. Serve a fare da "ponte" tra il mio sito e Trenitalia, perché per motivi di sicurezza i browser non permettono di prendere dati direttamente da altri siti.
+- **index.html**: È lo scheletro del sito. Abbiamo messo tutto in una sola pagina per rendere il passaggio tra le varie funzioni più veloce e senza attese.
+- **proxy.php**: È un file fondamentale. Serve a fare da "ponte" tra il nostro sito e Trenitalia, perché per motivi di sicurezza i browser non permettono di prendere dati direttamente da altri siti.
 - **app.js**: Contiene tutte le istruzioni per far reagire il sito ai click dell'utente, caricare le tabelle dei treni e gestire i tempi di aggiornamento.
-- **style.css**: Qui ho scritto le regole per i colori, i caratteri e soprattutto per fare in modo che il sito si adatti bene agli schermi piccoli dei cellulari.
+- **style.css**: Qui abbiamo scritto le regole per i colori, i caratteri e soprattutto per fare in modo che il sito si adatti bene agli schermi piccoli dei cellulari.
 
 ---
 
@@ -64,21 +64,27 @@ treni/
 
 ### 3.1 Il sistema del Proxy
 
-Il backend è la parte "invisibile" che lavora sul server. Ho creato un sistema di **Proxy**: quando l'utente cerca una stazione, il sito chiede al mio file PHP di andare a leggere i dati su Trenitalia. Il file PHP legge la risposta, la pulisce dalle informazioni inutili e la rimanda al sito in un formato che JavaScript riesce a leggere facilmente.
+Il backend è la parte "invisibile" che lavora sul server. Abbiamo creato un sistema di **Proxy**: quando l'utente cerca una stazione, il sito chiede al nostro file PHP di andare a leggere i dati su Trenitalia. Il file PHP legge la risposta, la pulisce dalle informazioni inutili e la rimanda al sito in un formato che JavaScript riesce a leggere facilmente. Abbiamo scelto questa strada perché le chiamate dirette dal browser verrebbero bloccate per motivi di sicurezza (CORS).
 
-### 3.2 Gli Endpoint utilizzati
+### 3.2 Gli Endpoint utilizzati (Tabella tecnica)
 
-Per far funzionare tutto, ho usato diversi "punti di accesso" (endpoint) messi a disposizione dai server ferroviari:
+Per far funzionare tutto, abbiamo studiato e utilizzato diversi "punti di accesso" (endpoint) messi a disposizione dai server ferroviari di Viaggiatreno. Ecco la tabella dettagliata di come il nostro sito comunica con il server:
 
-- **Ricerca Stazione**: Quando si scrive un nome, viene interrogato un servizio che suggerisce le stazioni corrispondenti (es. scrivendo "Mil" suggerisce "Milano Centrale").
-- **Tabellone Partenze/Arrivi**: Prende la lista di tutti i treni che passano da una stazione in un certo momento, con il binario e il ritardo aggiornato.
-- **Cerca Treno**: Se si inserisce un numero di treno, il sistema deve prima capire da dove è partito quel treno per poter poi mostrare tutto il suo percorso.
-- **Andamento Treno**: Mostra lo stato attuale del treno e la lista di tutte le stazioni dove si fermerà, con gli orari previsti e quelli reali.
-- **News e Statistiche**: Prende gli avvisi sugli scioperi e il numero totale di treni che stanno viaggiando in Italia in questo momento.
+| Azione nel sito | Endpoint Backend | Endpoint Trenitalia (Viaggiatreno) | Descrizione |
+| :--- | :--- | :--- | :--- |
+| **Autocomplete** | `proxy.php?action=autocomplete` | `/autocompletaStazione/{query}` | Suggerisce i nomi delle stazioni mentre l'utente scrive. |
+| **Partenze** | `proxy.php?action=departures` | `/partenze/{codice}/{data}` | Recupera la lista dei treni in partenza da una stazione. |
+| **Arrivi** | `proxy.php?action=arrivals` | `/arrivi/{codice}/{data}` | Recupera la lista dei treni in arrivo in una stazione. |
+| **Andamento** | `proxy.php?action=trainRoute` | `/andamentoTreno/{orig}/{num}/{data}` | Mostra lo stato attuale e tutte le fermate di un treno. |
+| **Cerca Treno** | `proxy.php?action=searchTrain` | `/cercaNumeroTrenoTrenoAutocomplete/{n}` | Trova la stazione di partenza necessaria per l'andamento. |
+| **Statistiche** | `proxy.php?action=statistiche` | `/statistiche/{timestamp}` | Fornisce il numero totale di treni circolanti in Italia. |
+| **News** | `proxy.php?action=news` | `/news/0/it` | Recupera gli ultimi avvisi ufficiali su scioperi o problemi. |
+
+Abbiamo dovuto lavorare molto sulla gestione di questi dati perché spesso arrivano in formati testuali grezzi che abbiamo dovuto trasformare in oggetti più semplici per il sito.
 
 ### 3.3 Salvataggio delle ricerche
 
-Ogni volta che viene cercata una stazione o un treno, il sistema salva un piccolo "log" nel database MariaDB. Questo serve per tenere traccia di quali sono le stazioni più cercate dagli utenti.
+Ogni volta che viene cercata una stazione o un treno, abbiamo fatto in modo che il sistema salvi un piccolo record nel database MariaDB. Questo ci permette di tenere traccia di quali sono le stazioni più cercate dagli utenti per scopi statistici.
 
 ---
 
@@ -86,15 +92,15 @@ Ogni volta che viene cercata una stazione o un treno, il sistema salva un piccol
 
 ### 4.1 Funzionamento del sito
 
-Ho cercato di rendere tutto automatico. Per esempio, nella ricerca ho messo un sistema che aspetta che l'utente finisca di scrivere prima di mandare la richiesta, così non si spreca traffico internet inutilmente. I dati della tabella si aggiornano da soli ogni minuto.
+Abbiamo cercato di rendere tutto automatico. Per esempio, nella ricerca abbiamo messo un sistema che aspetta che l'utente finisca di scrivere prima di mandare la richiesta, così non si spreca traffico internet inutilmente. I dati della tabella si aggiornano da soli ogni minuto per essere sempre precisi.
 
 ### 4.2 Gestione delle lingue
 
-Il sito può essere visualizzato in Italiano o in Inglese. Non ho usato traduttori automatici, ma ho creato un file con tutte le parole tradotte. Quando si cambia lingua, il sito sostituisce tutte le scritte istantaneamente.
+Il sito può essere visualizzato in Italiano o in Inglese. Non abbiamo usato traduttori automatici, ma abbiamo creato un file con tutte le parole tradotte da noi. Quando si cambia lingua, il sito sostituisce tutte le scritte istantaneamente senza dover ricaricare la pagina.
 
 ### 4.3 Design e colori
 
-Ho usato un design moderno e pulito. Ho aggiunto anche la **Modalità Scura**: premendo un tasto, i colori del sito cambiano per non affaticare la vista. Il sito si ricorda della scelta anche se si chiude il browser.
+Abbiamo usato un design moderno e pulito. Abbiamo aggiunto anche la **Modalità Scura**: premendo un tasto, i colori del sito cambiano per non affaticare la vista. Il sito si ricorda della scelta anche se si chiude il browser grazie al salvataggio locale.
 
 ---
 
@@ -102,7 +108,7 @@ Ho usato un design moderno e pulito. Ho aggiunto anche la **Modalità Scura**: p
 
 - **Ricerca rapida**: Suggerimenti immediati mentre si scrive il nome della stazione.
 - **Tabelloni completi**: Orari, binari e stato dei treni (in orario, in ritardo o soppresso).
-- **Percorso su mappa**: Se clicchi su un treno, vedi la linea del suo percorso su una mappa e un pallino che indica dove si trova ora.
+- **Percorso su mappa**: Se si clicca su un treno, si vede la linea del suo percorso su una mappa e un pallino che indica dove si trova ora.
 - **Notifiche ritardo**: Se un treno ha più di 10 minuti di ritardo, compare un avviso colorato per avvertire subito l'utente.
 - **Meteo**: Accanto alla stazione viene mostrato se c'è il sole o se piove.
 - **Stazioni recenti**: Il sito si ricorda delle ultime stazioni cercate e le mostra come tasti veloci.
@@ -111,7 +117,7 @@ Ho usato un design moderno e pulito. Ho aggiunto anche la **Modalità Scura**: p
 
 ## 6. Test effettuati e verificati
 
-Ho testato a lungo il sito per assicurarmi che non ci fossero errori. Ecco i test principali:
+Abbiamo testato a lungo il sito per assicurarci che non ci fossero errori. Ecco i test principali che abbiamo fatto:
 
 **Ricerca e Navigazione**
 - L'autocompletamento funziona anche scrivendo solo poche lettere (es. "roma t" trova "Roma Termini").
@@ -119,7 +125,7 @@ Ho testato a lungo il sito per assicurarmi che non ci fossero errori. Ecco i tes
 - I tasti per cambiare tra "Partenze" e "Arrivi" aggiornano subito la tabella senza errori.
 
 **Stazione e Tabelle**
-- Ho verificato il caricamento nelle stazioni più grandi come Milano Centrale e Roma Termini, dove ci sono tantissimi treni.
+- Abbiamo verificato il caricamento nelle stazioni più grandi come Milano Centrale e Roma Termini, dove ci sono tantissimi treni.
 - Il meteo compare correttamente nelle città principali, mentre scompare se i dati non sono disponibili per le stazioni più piccole.
 - I dati si aggiornano correttamente ogni 60 secondi senza dover ricaricare la pagina.
 
@@ -129,7 +135,7 @@ Ho testato a lungo il sito per assicurarmi che non ci fossero errori. Ecco i tes
 - Se un treno è soppresso, la tabella lo evidenzia chiaramente in rosso.
 
 **UI/UX e Responsive**
-- Ho testato il sito su diversi smartphone (iPhone e Android). Su schermi piccoli le tabelle rimangono leggibili e il menu diventa facile da usare con il pollice.
+- Abbiamo testato il sito su diversi smartphone (iPhone e Android). Su schermi piccoli le tabelle rimangono leggibili e il menu diventa facile da usare con il pollice.
 - Il cambio tra tema chiaro e scuro funziona bene e non "salta" quando si ricarica la pagina.
 - Le notifiche di ritardo (toast) compaiono correttamente e spariscono da sole dopo qualche secondo.
 
@@ -151,5 +157,5 @@ Per chi deve correggere il progetto, ecco come configurarlo sul proprio computer
 *Nota: Il sito ha bisogno di internet per scaricare le mappe e i dati dei treni in tempo reale.*
 
 ---
-**Studente**: LordZizou
+**Sviluppato da**: LordZizou & Co.
 **Data**: 27 Aprile 2026
