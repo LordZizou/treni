@@ -1,114 +1,154 @@
-# BinarioLive — Monitoraggio Treni in Tempo Reale
+# BinarioLive — Documentazione Tecnica Completa
 
-**BinarioLive** è un'applicazione web moderna e intuitiva per il monitoraggio in tempo reale del traffico ferroviario italiano. Il progetto si interfaccia con le API pubbliche di Trenitalia per fornire dati accurati su partenze, arrivi, ritardi e percorsi dei treni, offrendo un'esperienza utente ottimizzata sia per desktop che per dispositivi mobili.
+## Indice
+
+1. [Panoramica del progetto](#1-panoramica-del-progetto)
+2. [Architettura generale](#2-architettura-generale)
+3. [Backend — Struttura e funzionamento](#3-backend--struttura-e-funzionamento)
+   - [Configurazione e Proxy](#31-configurazione-e-proxy)
+   - [Analisi degli Endpoint API](#32-analisi-degli-endpoint-api)
+4. [Frontend — Struttura e funzionamento](#4-frontend--struttura-e-funzionamento)
+   - [Interfaccia HTML](#41-interfaccia-html)
+   - [Logica JavaScript](#42-logica-javascript)
+   - [Design e CSS](#43-design-e-css)
+5. [Funzionalità implementate](#5-funzionalità-implementate)
+   - [Core Features](#51-core-features)
+   - [Funzionalità aggiuntive (Bonus)](#52-funzionalità-aggiuntive-bonus)
+6. [Test effettuati](#6-test-effettuati)
+7. [Istruzioni per l'installazione locale](#7-istruzioni-per-linstallazione-locale)
 
 ---
 
-## 1. Struttura del Software
+## 1. Panoramica del progetto
 
-Il progetto segue un'architettura **Client-Server** semplice ma efficace, con una netta separazione tra la logica di backend (PHP) e l'interfaccia frontend (HTML/JS/CSS).
+**BinarioLive** è un'applicazione web avanzata progettata per il monitoraggio in tempo reale del sistema ferroviario italiano. Il progetto nasce con l'obiettivo di fornire agli utenti uno strumento agile, veloce e responsive per consultare lo stato dei treni, i tabelloni delle stazioni e i percorsi dettagliati su mappa.
 
-### Organizzazione File e Cartelle
+**Stack tecnologico:**
+- **Backend:** PHP Vanilla (architettura Stateless/Proxy)
+- **Frontend:** HTML5, CSS3 (Modern Grid & Flexbox), JavaScript ES6+
+- **Database:** MariaDB (per log ricerche e statistiche)
+- **Mappe:** Leaflet.js con tiles OpenStreetMap
+- **Dati:** API Trenitalia (Viaggiatreno) e OpenWeatherMap
+
+---
+
+## 2. Architettura generale
+
+Il software è organizzato in modo modulare per garantire manutenibilità e scalabilità. Di seguito la struttura delle directory:
+
 ```text
 treni/
 ├── api/
-│   ├── config.php      # Configurazioni globali (DB, URL API esterne)
-│   ├── proxy.php      # Backend: Proxy per chiamate API e gestione logica
-│   └── ...
+│   ├── config.php          # Costanti di sistema e parametri DB
+│   └── proxy.php           # Router backend e gestore chiamate API esterne
 ├── css/
-│   └── style.css       # Design responsive e gestione temi (Light/Dark)
+│   └── style.css           # Framework stilistico, temi e media queries
 ├── js/
-│   ├── app.js          # Logica principale frontend e gestione eventi
-│   ├── i18n.js         # Gestione multilingua (Italiano/Inglese)
-│   └── map.js          # Integrazione mappe interattive con Leaflet.js
+│   ├── app.js              # Coordinatore della logica frontend
+│   ├── i18n.js             # Motore di internazionalizzazione (IT/EN)
+│   └── map.js              # Modulo di gestione cartografica Leaflet
 ├── sql/
-│   └── schema.sql      # Schema del database MariaDB per statistiche e log
-├── index.html          # Entry point dell'applicazione
-└── README.md           # Questa documentazione
+│   └── schema.sql          # Definizione delle tabelle MariaDB
+├── index.html              # Punto di accesso unico (Single Page Application)
+└── README.md               # Documentazione tecnica (questo file)
 ```
 
-### Tecnologie Utilizzate
-- **Frontend:** HTML5, CSS3 (Custom Variables, Grid, Flexbox), JavaScript ES6 (Vanilla).
-- **Backend:** PHP 8.x per la gestione delle richieste proxy e l'interfacciamento con il database.
-- **Database:** MariaDB/MySQL per il salvataggio delle ricerche e la generazione di statistiche.
-- **Mappe:** Leaflet.js per la visualizzazione geografica dei percorsi.
-- **Icone:** Emoji di sistema e icone SVG per un caricamento ultra-rapido.
+L'applicazione opera come una **Single Page Application (SPA)**: il caricamento dei contenuti avviene dinamicamente tramite chiamate asincrone (`fetch`), evitando il refresh della pagina e garantendo un'esperienza fluida.
 
 ---
 
-## 2. Funzionalità Principali
+## 3. Backend — Struttura e funzionamento
 
-L'applicazione implementa tutte le specifiche richieste e diverse funzionalità aggiuntive per migliorare l'esperienza utente:
+### 3.1 Configurazione e Proxy
 
-- **Ricerca Stazione:** Campo di ricerca con autocompletamento in tempo reale.
-- **Tabellone Partenze/Arrivi:** Visualizzazione dettagliata dei treni con orari previsti, binari, stati e ritardi.
-- **Ricerca Treno:** Possibilità di cercare un treno specifico per numero e visualizzarne lo stato attuale.
-- **Percorso Dettagliato:** Visualizzazione della timeline completa di un treno con tutte le fermate intermedie, orari di passaggio e ritardi per singola stazione.
-- **Mappa Interattiva:** Visualizzazione geografica del percorso del treno con marker personalizzati per la posizione attuale.
-- **Design Responsive:** Interfaccia ottimizzata per smartphone, tablet e desktop.
+Il backend funge da **intermediario (Proxy)** tra il client e i server di Trenitalia. Questa scelta tecnica è obbligatoria per superare le restrizioni **CORS** (Cross-Origin Resource Sharing) che impedirebbero al browser di chiamare direttamente le API di Viaggiatreno.
 
-### Funzionalità Extra Implementate
-- **Sistema di Notifiche Toast:** Avviso visivo automatico se un treno selezionato ha un ritardo superiore a 10 minuti.
-- **News in Tempo Reale:** Sezione dedicata alle ultime notizie ferroviarie recuperate direttamente dagli endpoint ufficiali.
-- **Integrazione Meteo:** Visualizzazione delle condizioni meteo correnti della stazione selezionata (tramite OpenWeatherMap o dati Trenitalia).
-- **Contatore Live:** Visualizzazione in tempo reale del numero di treni attualmente circolanti sulla rete nazionale.
-- **Supporto Multilingua:** Applicazione completamente tradotta in Italiano e Inglese.
-- **Tema Dark/Light:** Supporto nativo per il tema scuro, selezionabile dall'utente e salvato nelle preferenze.
-- **Stazioni Recenti:** Salvataggio automatico nel `localStorage` delle ultime stazioni consultate per un accesso rapido.
+- **`api/config.php`**: Contiene le credenziali del database MariaDB e gli URL base delle API. Utilizza un approccio a costanti per evitare modifiche sparse nel codice.
+- **`api/proxy.php`**: È il motore del backend. Riceve le richieste dal frontend tramite il parametro `action`, effettua le chiamate HTTP (utilizzando `curl` o `file_get_contents`) ai server di Trenitalia, elabora i dati (spesso convertendo formati testuali grezzi in JSON pulito) e restituisce la risposta al client.
 
----
+### 3.2 Analisi degli Endpoint API
 
-## 3. Backend e API (Focus per Studenti)
+Per gli studenti e gli sviluppatori che desiderano comprendere l'integrazione, ecco il riferimento agli endpoint utilizzati, basati sul repository di riferimento [sabas/trenitalia](https://github.com/sabas/trenitalia):
 
-Il "cuore" del progetto è il file `api/proxy.php`. Poiché le API di Trenitalia non permettono chiamate dirette dal browser (per problemi di sicurezza chiamati CORS), abbiamo costruito un **Proxy** in PHP.
-
-### Come funziona il Backend
-Il frontend non chiama direttamente Trenitalia, ma invia una richiesta al nostro server PHP. Il server PHP:
-1. Riceve la richiesta (es. "voglio le partenze di Milano").
-2. Effettua la chiamata reale ai server di `viaggiatreno.it`.
-3. Riceve i dati, li pulisce o li integra con il database.
-4. Restituisce un JSON pulito al frontend.
-
-### Endpoints Principali (Frontend -> Backend)
-Ecco gli endpoint che il nostro frontend utilizza per comunicare con il backend:
-
-| Azione | Descrizione | Endpoint Trenitalia corrispondente |
-| :--- | :--- | :--- |
-| `autocomplete` | Cerca nomi di stazioni | `/autocompletaStazione/{query}` |
-| `departures` | Lista treni in partenza | `/partenze/{codiceStazione}/{data}` |
-| `arrivals` | Lista treni in arrivo | `/arrivi/{codiceStazione}/{data}` |
-| `trainRoute` | Dettaglio fermate treno | `/andamentoTreno/{codOrigine}/{numTreno}/{data}` |
-| `searchTrain` | Trova codice treno da numero | `/cercaNumeroTrenoTrenoAutocomplete/{numero}` |
-| `statistiche` | Numero treni circolanti | `/statistiche/{timestamp}` |
-| `news` | Ultime notizie | `/news/0/it` |
+| Azione | Endpoint Backend | Endpoint Trenitalia (Viaggiatreno) | Descrizione |
+| :--- | :--- | :--- | :--- |
+| **Autocomplete** | `proxy.php?action=autocomplete&q=...` | `/autocompletaStazione/{query}` | Restituisce una lista di stazioni. Il proxy pulisce il formato "NOME\|CODICE". |
+| **Partenze** | `proxy.php?action=departures&code=...` | `/partenze/{codice}/{timestamp}` | Recupera il tabellone delle partenze in tempo reale. |
+| **Arrivi** | `proxy.php?action=arrivals&code=...` | `/arrivi/{codice}/{timestamp}` | Recupera il tabellone degli arrivi. |
+| **Andamento** | `proxy.php?action=trainRoute&...` | `/andamentoTreno/{origine}/{num}/{data}` | Restituisce lo stato del treno e la lista di tutte le fermate. |
+| **Ricerca Treno** | `proxy.php?action=searchTrain&num=...` | `/cercaNumeroTrenoTrenoAutocomplete/{num}` | Fondamentale per trovare il codice stazione di partenza necessario per l'andamento. |
+| **Statistiche** | `proxy.php?action=statistiche` | `/statistiche/{timestamp}` | Restituisce dati globali come il numero di treni circolanti. |
+| **News** | `proxy.php?action=news` | `/news/0/it` | Recupera gli ultimi avvisi ufficiali di Trenitalia. |
 
 ---
 
-## 4. Test Effettuati
+## 4. Frontend — Struttura e funzionamento
 
-L'applicazione è stata sottoposta a diversi cicli di test per garantirne la stabilità:
-- **Test di Responsività:** Verificato il layout su viewport da 320px (iPhone SE) fino a 2560px (Monitor 2K).
-- **Test Cross-Browser:** Verificato il funzionamento su Chrome, Firefox e Safari.
-- **Test di Carico API:** Gestione dei casi in cui i server Trenitalia non rispondono o restituiscono dati incompleti (mostrando stati di "N/A" o messaggi di errore amichevoli).
-- **Test LocalStorage:** Verifica della persistenza delle stazioni recenti e della preferenza del tema al riavvio del browser.
+### 4.1 Interfaccia HTML
+Il file `index.html` definisce lo scheletro dell'applicazione. È diviso in sezioni semantiche:
+- **Header:** Contiene il logo, il contatore live, i selettori di lingua e il toggle del tema.
+- **Search Section:** Due box di ricerca indipendenti con logica di autocompletamento.
+- **Main Content:** Una griglia dinamica che ospita la tabella dei treni e la sidebar dei widget.
+- **Modal:** Una finestra sovrapposta per i dettagli del percorso e la mappa, per non perdere il contesto della ricerca principale.
+
+### 4.2 Logica JavaScript
+- **`app.js`**: Gestisce il ciclo di vita dell'app. Implementa il **Debouncing** sulla ricerca (aspetta che l'utente smetta di scrivere prima di chiamare l'API) e coordina l'aggiornamento dei dati ogni 60 secondi.
+- **`i18n.js`**: Utilizza un dizionario di mappatura. Ogni elemento HTML con l'attributo `data-i18n` viene tradotto istantaneamente al cambio lingua senza ricaricare la pagina.
+- **`map.js`**: Incapsula la logica di Leaflet. Crea marker personalizzati (pallini pulsanti per la posizione attuale, icone diverse per stazioni di origine e destinazione) e disegna la linea del percorso (`Polyline`).
+
+### 4.3 Design e CSS
+Il file `style.css` implementa un sistema di **Variabili CSS** (Custom Properties) per gestire i temi.
+- **Responsive Design:** Utilizza `@media queries` per adattare il layout. Su mobile, le colonne della tabella meno importanti vengono nascoste e i widget si impilano verticalmente.
+- **User Experience:** Include animazioni `fade-in` per i nuovi dati e transizioni morbide per il cambio tema.
 
 ---
 
-## 5. Istruzioni per l'Installazione (Per il Professore)
+## 5. Funzionalità implementate
 
-Per avviare il progetto in locale, segua questi passaggi:
+### 5.1 Core Features
+- [x] **Ricerca stazione:** Autocompletamento rapido e preciso.
+- [x] **Tabellone Real-time:** Orari previsti vs effettivi, binari e stato del treno.
+- [x] **Tracciamento Treno:** Ricerca per numero e visualizzazione del percorso completo.
+- [x] **Mobile First:** Webapp perfettamente utilizzabile da smartphone.
 
-1. **Requisiti:** Un server web (Apache/Nginx) con PHP 7.4 o superiore e un database MariaDB/MySQL.
+### 5.2 Funzionalità aggiuntive (Bonus)
+- [x] **Notifiche Intelligenti:** Sistema Toast che avvisa se un treno supera i 10 minuti di ritardo.
+- [x] **News Feed:** Integrazione delle ultime notizie ufficiali Trenitalia.
+- [x] **Meteo Dinamico:** Visualizzazione del meteo della stazione (via OpenWeatherMap o API interne).
+- [x] **Contatore Live:** Visualizzazione globale dei treni in movimento sulla rete.
+- [x] **Multilingua:** Supporto completo IT/EN.
+- [x] **Dark Mode:** Tema scuro per il risparmio energetico e comfort visivo.
+- [x] **Smart Storage:** Memorizzazione delle ultime 8 stazioni cercate nel browser.
+
+---
+
+## 6. Test effettuati
+
+Il software è stato testato rigorosamente simulando scenari d'uso reali:
+1. **Test di Usabilità Mobile:** Verificato il comportamento su viewport strette (320px). Risultato: layout fluido, tabelle leggibili tramite scroll orizzontale assistito.
+2. **Test di Latenza API:** Simulati ritardi nella risposta dei server Trenitalia. Risultato: l'interfaccia mostra spinner di caricamento e non si blocca.
+3. **Test di Robustezza Dati:** Gestiti casi di treni soppressi o stazioni senza dati meteo. Risultato: l'app mostra messaggi di errore graziosi ("N/A") invece di crashare.
+4. **Test di Persistenza:** Verificato che al riavvio del browser le stazioni recenti e il tema scelto rimangano salvati.
+
+---
+
+## 7. Istruzioni per l'installazione locale
+
+*Gentile Professore, segua questi passaggi per avviare il progetto:*
+
+1. **Setup Ambiente:** Utilizzi un ambiente come XAMPP, WAMP o MAMP (PHP >= 7.4).
 2. **Database:**
-   - Crei un database chiamato `binario_live`.
-   - Importi il file `sql/schema.sql` per creare le tabelle necessarie.
+   - Acceda a PHPMyAdmin e crei un database `binario_live`.
+   - Importi il file `sql/schema.sql` contenuto nella cartella del progetto.
 3. **Configurazione:**
-   - Rinomini (se necessario) o modifichi `api/config.php` inserendo le credenziali del suo database locale (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`).
-4. **Esecuzione:**
-   - Copi la cartella del progetto nella root del suo server web (es. `htdocs` per XAMPP).
-   - Acceda tramite browser all'indirizzo `http://localhost/treni/index.html`.
+   - Apra `api/config.php` e inserisca le sue credenziali locali (solitamente `root` e password vuota).
+4. **Accesso:**
+   - Copi la cartella `treni` in `htdocs`.
+   - Navighi su `http://localhost/treni/index.html`.
 
-**Nota:** Il progetto richiede una connessione internet attiva per recuperare i dati in tempo reale dai server di Trenitalia e per caricare le mappe di OpenStreetMap.
+**Nota:** È necessaria una connessione internet per il recupero dei dati in tempo reale e il caricamento delle mappe.
 
 ---
-**Sviluppato con passione per l'esame di programmazione web.**
+**Sviluppato da:** LordZizou
+**Revisione Tecnica:** Manus AI
+**Data:** 27 Aprile 2026
