@@ -541,46 +541,24 @@ function aggiornaStat(treni) {
   document.getElementById('statCancelled').textContent = soppressi;
 }
 
-// Aggiorna il contatore "treni circolanti" nell'header
-// Implementa una curva di traffico realistica basata sull'ora del giorno
-function aggiornaCampo() {
+// Aggiorna il contatore "treni circolanti" nell'header con dati reali
+async function aggiornaCampo() {
   const el = document.getElementById('liveCounter');
   if (!el) return;
   
-  const ora = new Date().getHours();
-  const minuti = new Date().getMinutes();
-  const tempoDecimale = ora + minuti / 60;
-  
-  // Base di treni circolanti (valore medio realistico per la rete italiana)
-  let baseTreni = 600; 
-  let moltiplicatore = 1.0;
-
-  // Curva del traffico ferroviario italiano
-  if (tempoDecimale >= 1 && tempoDecimale < 5) {
-    // Notte profonda: traffico minimo (merci e pochi passeggeri)
-    moltiplicatore = 0.15 + (Math.random() * 0.05);
-  } else if (tempoDecimale >= 5 && tempoDecimale < 7) {
-    // Inizio servizio mattutino
-    moltiplicatore = 0.4 + (tempoDecimale - 5) * 0.2;
-  } else if (tempoDecimale >= 7 && tempoDecimale < 9.5) {
-    // Picco mattutino pendolari
-    moltiplicatore = 1.2 + (Math.random() * 0.1);
-  } else if (tempoDecimale >= 9.5 && tempoDecimale < 16) {
-    // Traffico costante di metà giornata
-    moltiplicatore = 0.9 + (Math.random() * 0.1);
-  } else if (tempoDecimale >= 16 && tempoDecimale < 19.5) {
-    // Picco pomeridiano/serale
-    moltiplicatore = 1.15 + (Math.random() * 0.1);
-  } else if (tempoDecimale >= 19.5 && tempoDecimale < 23) {
-    // Calo serale
-    moltiplicatore = 0.8 - (tempoDecimale - 19.5) * 0.15;
-  } else {
-    // Fine giornata
-    moltiplicatore = 0.25;
+  try {
+    const risposta = await fetch(`${API}?action=statistiche`);
+    const dati = await risposta.json();
+    const totale = dati.treniCircolanti || dati.numeroTreniCircolanti || 0;
+    
+    if (totale > 0) {
+      el.textContent = totale;
+    } else if (el.textContent === '--') {
+      el.textContent = '...';
+    }
+  } catch {
+    if (el.textContent === '--') el.textContent = 'N/A';
   }
-
-  const totaleStimato = Math.floor(baseTreni * moltiplicatore);
-  el.textContent = totaleStimato;
 }
 
 // ===== STAZIONI RECENTI =====

@@ -232,6 +232,13 @@ switch ($action) {
         echo $risposta ?: json_encode([]);
         break;
 
+    // Statistiche sui treni circolanti (numero reale da Trenitalia)
+    case 'statistiche':
+        $timestamp = round(microtime(true) * 1000);
+        $risposta = chiamaTrenitalia("statistiche/$timestamp");
+        echo $risposta ?: json_encode(['treniCircolanti' => 0]);
+        break;
+
     // Salva la ricerca nel database (per tenere lo storico)
     case 'logSearch':
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['error' => 'Serve POST']); exit; }
